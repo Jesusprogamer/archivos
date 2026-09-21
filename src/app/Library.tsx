@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { cx } from '../ui/cx';
 import { FilePickerButton } from './Home';
+import { useVideoPoster } from './useVideoPoster';
 import { RejectedFiles } from './RejectedFiles';
 import styles from './Library.module.css';
 
@@ -14,6 +15,8 @@ const KIND_ICON = { image: ImageIcon, audio: AudioLines, video: Film } as const;
 
 function Thumb({ item }: { item: MediaItem }) {
   const Icon = KIND_ICON[item.format.kind];
+  const poster = useVideoPoster(item.url, item.format.kind === 'video');
+
   if (item.format.kind === 'image') {
     return (
       <span className={styles.thumb}>
@@ -21,18 +24,9 @@ function Thumb({ item }: { item: MediaItem }) {
       </span>
     );
   }
-  if (item.format.kind === 'video') {
-    return (
-      <span className={styles.thumb}>
-        {/* A media fragment nudges the browser past the first (often black)
-            frame, so the thumbnail shows something recognisable. */}
-        <video src={`${item.url}#t=0.2`} preload="metadata" muted playsInline aria-hidden="true" />
-      </span>
-    );
-  }
   return (
     <span className={styles.thumb}>
-      <Icon size={16} aria-hidden="true" />
+      {poster ? <img src={poster} alt="" /> : <Icon size={16} aria-hidden="true" />}
     </span>
   );
 }

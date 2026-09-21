@@ -3,7 +3,7 @@ import styles from './feedback.module.css';
 
 export interface ProgressProps {
   /** 0–1, or `undefined` when the work cannot report progress. */
-  value?: number;
+  value?: number | undefined;
   label?: string;
   /** Free text on the right, typically the time remaining. */
   detail?: string;

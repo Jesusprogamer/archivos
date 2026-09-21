@@ -223,7 +223,7 @@ permisiva, hay que decirlo: es un cambio de rumbo, no un ajuste.**
 | --- | --- | --- |
 | 0 | Spikes, decisiones, este documento | ✅ |
 | 1 | Base: sistema de diseño, portada, detección, biblioteca, idiomas, tema | ✅ |
-| 2 | Convertidor (audio, vídeo, imagen) con cola y ZIP | ⏳ |
+| 2 | Convertidor (audio, vídeo, imagen) con cola y ZIP | ✅ |
 | 3 | Editor de imagen y los tres métodos de recorte de fondo | ⏳ |
 | 4 | Editor de audio: onda, edición y efectos | ⏳ |
 | 5 | Editor de vídeo multipista | ⏳ |
@@ -252,3 +252,44 @@ todos ellos, `tsc -b` y `eslint` limpios.
 * El idioma por defecto es el español, salvo que el navegador declare inglés.
 * TIFF y HEIC se **detectan** pero se rechazan con una explicación concreta: los
   navegadores no traen descodificador. Es más útil que un «archivo no válido».
+
+## 10. Cierre de la fase 2
+
+**Funciona, comprobado con archivos reales en Chromium:** audio → MP3, WAV, OGG,
+Opus, FLAC y M4A; vídeo → MP4, WebM, MKV, MOV, H.265 y GIF; extracción del audio
+de un vídeo a cualquier formato de audio; imagen → PNG, JPG, WebP, AVIF (si el
+navegador lo permite), BMP y GIF. Cola con varios archivos, progreso real con
+tiempo restante, cancelación y descarga individual o en ZIP.
+
+**Dos motores, según lo que convenga:**
+
+* **El codificador del navegador** para PNG, JPG, WebP y AVIF, en un Web Worker.
+  Convertir una foto no debería costar una descarga de 32 MB, y así no la cuesta.
+* **ffmpeg.wasm** para todo lo demás. Se descarga la primera vez que hace falta,
+  con barra de progreso real, y se queda en la caché.
+
+**Decisiones y detalles que no son obvios:**
+
+* La lista de formatos de salida sale de lo que este build soporta de verdad
+  (§3.2), no de la documentación de ffmpeg. Por eso no hay AV1 y sí hay H.265,
+  este último con un aviso sobre la reproducción.
+* AVIF solo aparece si `canvas.toDataURL('image/avif')` responde que sí. Si el
+  navegador miente y devuelve un PNG con otra etiqueta, la conversión falla de
+  forma explícita en lugar de entregar un archivo mal nombrado.
+* El GIF se genera en dos pasadas con `palettegen`/`paletteuse` y **la misma
+  cadena de filtros en ambas**; si no coinciden, la paleta no corresponde a los
+  fotogramas y el resultado se ve sucio. Hay un test que lo vigila.
+* `scale=trunc(iw/2)*2:trunc(ih/2)*2` incluso al «mantener el original»: H.264 y
+  VP9 con croma 4:2:0 rechazan dimensiones impares.
+* Los presets de x264 son `veryfast` salvo en calidad alta: en WebAssembly un
+  preset lento triplica la espera para una mejora que casi no se ve.
+* Cancelar termina el worker, porque ffmpeg.wasm no sabe interrumpir un comando
+  en marcha. La interfaz lo dice antes de que el usuario se pregunte por qué la
+  siguiente conversión tarda más en arrancar.
+* Aviso de tamaño antes de empezar (512 MB) y confirmación explícita por encima
+  de 2 GB. Nunca se impide, se informa.
+
+**Comprobaciones:** 53 tests unitarios (incluidos los argumentos de ffmpeg de
+cada destino) y 15 end-to-end que convierten archivos de verdad y comprueban la
+firma binaria de lo descargado: un JPG que empieza por `FFD8FF`, un OGG que
+empieza por `OggS`, un ZIP que empieza por `PK`. Cero errores de consola.
