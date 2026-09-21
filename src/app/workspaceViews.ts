@@ -5,21 +5,22 @@ import { AudioWorkspace } from '../workspaces/audio/AudioWorkspace';
 import { ConvertWorkspace } from '../workspaces/convert/ConvertWorkspace';
 import { ImageWorkspace } from '../workspaces/image/ImageWorkspace';
 import { VideoWorkspace } from '../workspaces/video/VideoWorkspace';
+import { VisualizerWorkspace } from '../workspaces/visualizer/VisualizerWorkspace';
 
 export interface WorkspaceViewProps {
   item: MediaItem;
 }
 
 /**
- * The workspaces that exist right now.
+ * The workspaces that exist.
  *
  * The tab bar is built from this map, so a workspace that has not been written
- * yet simply does not appear — there is never a tab that leads nowhere. Each
- * phase adds its entry here.
+ * cannot appear as a tab that leads nowhere.
  */
 export const WORKSPACE_VIEWS: Partial<Record<WorkspaceId, ComponentType<WorkspaceViewProps>>> = {
   convert: ConvertWorkspace,
   image: ImageWorkspace,
   audio: AudioWorkspace,
   video: VideoWorkspace,
+  visualizer: VisualizerWorkspace,
 };

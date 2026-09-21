@@ -135,3 +135,24 @@ svg {
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
 }
+
+/*
+ * A plain text input styled like the rest of the controls, for the handful of
+ * places that need one without the full `Field` wrapper.
+ */
+.forja-input {
+  width: 100%;
+  height: 32px;
+  padding-inline: var(--s-2);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-size: var(--text-sm);
+  color: var(--fg);
+}
+
+.forja-input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}

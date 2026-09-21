@@ -263,7 +263,7 @@ permisiva, hay que decirlo: es un cambio de rumbo, no un ajuste.**
 | 3 | Editor de imagen y los tres métodos de recorte de fondo | ✅ |
 | 4 | Editor de audio: onda, edición y efectos | ✅ |
 | 5 | Editor de vídeo multipista | ✅ |
-| 6 | Visualizador de audio | ⏳ |
+| 6 | Visualizador de audio | ✅ |
 | 7 | Pulido, accesibilidad, documentación y despliegue | ⏳ |
 
 ## 9. Cierre de la fase 1
@@ -506,3 +506,50 @@ referencie, mientras que una instantánea de una foto de 60 Mpx ocupa 300 MB.
 **Comprobaciones:** 329 tests unitarios y 42 end-to-end. El de exportación
 descarga el vídeo generado, lo descodifica en el navegador y comprueba duración
 y resolución reales.
+
+## 14. Cierre de la fase 6
+
+**Funciona, comprobado en el navegador:** seis estilos —barras, barras en
+espejo, línea de onda, circular, espectro de área y partículas—, cada uno con
+colores y degradado, número de barras, grosor, tamaño, sensibilidad, suavizado,
+brillo, reacción a los graves, simetría y rango de frecuencias. Fondo de color,
+degradado o imagen con oscurecido; capa de texto con título, artista, fuente,
+posición, color y tamaño; logo con posición, tamaño y opacidad. Proporciones
+16:9, 9:16, 1:1 y 4:5, con resolución y fotogramas por segundo. Presets
+guardables. Exportación a MP4 y WebM con el audio incluido.
+
+**El audio se analiza entero antes de dibujar nada, y eso es la decisión
+importante.** Un `AnalyserNode` devuelve lo que haya en su búfer en el instante
+en que se le pregunta, que depende del momento exacto en que llegue el
+fotograma. Con él, **exportar dos veces daría dos vídeos distintos**. Aquí el
+fotograma número N siempre ve el mismo espectro, y hay un test que lo comprueba
+comparando dos análisis del mismo audio.
+
+Por el mismo motivo, **las partículas no se simulan**: su posición sale del
+índice del fotograma mediante una fórmula fija (una espiral de ángulo áureo, que
+las reparte sin que se amontonen). Un sistema con estado acumulado haría que
+cada exportación fuese distinta, y se desviaría si algún fotograma se
+recalculase.
+
+**Detalles que no son obvios:**
+
+* **La FFT está escrita a mano**, cuarenta líneas de radix-2 iterativo. Una
+  dependencia más que auditar y licenciar para algo que se ejecuta una vez por
+  fotograma sobre unos miles de muestras no compensaba.
+* **Las bandas se reparten en escala logarítmica.** Con bandas lineales, nueve
+  décimas partes de las barras cubrirían frecuencias que nadie distingue y los
+  graves —lo único que se mueve de verdad— quedarían aplastados en las dos
+  primeras.
+* **El suavizado es asimétrico**: las subidas son instantáneas y las bajadas
+  graduales. Una barra que llega tarde al golpe de un bombo parece rota; una que
+  baja despacio, no.
+* La ventana de análisis se **centra** en el instante del fotograma, no empieza
+  en él, para que un pico coincida con la imagen en vez de ir medio búfer por
+  detrás.
+* Se suman los canales antes de analizar: un visualizador que reacciona solo al
+  canal izquierdo se queda quieto en cuanto la música está panoramizada.
+
+**Comprobaciones:** 361 tests unitarios y 47 end-to-end. Entre ellos, uno que
+**lee los píxeles del canvas** y comprueba que los seis estilos pintan algo de
+verdad, otro que verifica que un preset restaura la escena completa, y otro que
+exporta un vídeo real y comprueba su cabecera EBML.
