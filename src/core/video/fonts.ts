@@ -10,6 +10,8 @@
  * and only once, because `FontFace.load()` resolves from cache on later calls.
  */
 
+import { assetUrl } from '../util/assets';
+
 export interface FontDefinition {
   readonly family: string;
   readonly label: string;
@@ -26,9 +28,9 @@ export const FONTS: readonly FontDefinition[] = [
     weights: [400, 700],
     italic: true,
     files: {
-      '400': '/fonts/InstrumentSans-Regular.woff2',
-      '700': '/fonts/InstrumentSans-Bold.woff2',
-      '400i': '/fonts/InstrumentSans-Italic.woff2',
+      '400': 'fonts/InstrumentSans-Regular.woff2',
+      '700': 'fonts/InstrumentSans-Bold.woff2',
+      '400i': 'fonts/InstrumentSans-Italic.woff2',
     },
   },
   {
@@ -37,8 +39,8 @@ export const FONTS: readonly FontDefinition[] = [
     weights: [400, 700],
     italic: false,
     files: {
-      '400': '/fonts/Outfit-Regular.woff2',
-      '700': '/fonts/Outfit-Bold.woff2',
+      '400': 'fonts/Outfit-Regular.woff2',
+      '700': 'fonts/Outfit-Bold.woff2',
     },
   },
   {
@@ -47,9 +49,9 @@ export const FONTS: readonly FontDefinition[] = [
     weights: [400, 700],
     italic: true,
     files: {
-      '400': '/fonts/Lora-Regular.woff2',
-      '700': '/fonts/Lora-Bold.woff2',
-      '400i': '/fonts/Lora-Italic.woff2',
+      '400': 'fonts/Lora-Regular.woff2',
+      '700': 'fonts/Lora-Bold.woff2',
+      '400i': 'fonts/Lora-Italic.woff2',
     },
   },
   {
@@ -58,8 +60,8 @@ export const FONTS: readonly FontDefinition[] = [
     weights: [400, 700],
     italic: false,
     files: {
-      '400': '/fonts/JetBrainsMono-Regular.woff2',
-      '700': '/fonts/JetBrainsMono-Bold.woff2',
+      '400': 'fonts/JetBrainsMono-Regular.woff2',
+      '700': 'fonts/JetBrainsMono-Bold.woff2',
     },
   },
   {
@@ -67,14 +69,14 @@ export const FONTS: readonly FontDefinition[] = [
     label: 'Big Shoulders',
     weights: [700],
     italic: false,
-    files: { '700': '/fonts/BigShoulders-Bold.woff2' },
+    files: { '700': 'fonts/BigShoulders-Bold.woff2' },
   },
   {
     family: 'Nothing You Could Do',
     label: 'Manuscrita',
     weights: [400],
     italic: false,
-    files: { '400': '/fonts/NothingYouCouldDo-Regular.woff2' },
+    files: { '400': 'fonts/NothingYouCouldDo-Regular.woff2' },
   },
 ];
 
@@ -99,7 +101,7 @@ export async function loadFonts(): Promise<void> {
       if (loaded.has(id)) continue;
       loaded.add(id);
       const weight = key.replace('i', '');
-      const face = new FontFace(font.family, `url(${url}) format('woff2')`, {
+      const face = new FontFace(font.family, `url(${assetUrl(url)}) format('woff2')`, {
         weight,
         style: key.endsWith('i') ? 'italic' : 'normal',
       });

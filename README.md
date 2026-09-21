@@ -39,16 +39,57 @@ npm run preview   # sirve dist/ en http://localhost:4173 para comprobarlo
 
 ## Publicarlo en internet
 
-Forja es estático, así que vale cualquier hosting de archivos, **con una
-condición**: para que ffmpeg use varios hilos hace falta servir dos cabeceras
-(`COOP` y `COEP`). Sin ellas la aplicación funciona igual, solo que más lenta.
+Forja es estático, así que vale cualquier hosting de archivos. La única
+diferencia entre unos y otros es si pueden enviar dos cabeceras (`COOP` y
+`COEP`): con ellas ffmpeg.wasm usa varios hilos y las exportaciones de vídeo
+van más rápido. Sin ellas **todo funciona igual**, solo que más despacio; está
+verificado, no supuesto.
 
-| Hosting              | Qué hacer                                        | Cabeceras                     |
-| -------------------- | ------------------------------------------------ | ----------------------------- |
-| **Netlify**          | Conectar el repositorio. `netlify.toml` ya está. | ✅ vía `public/_headers`      |
-| **Cloudflare Pages** | Build: `npm run build`, salida: `dist`           | ✅ vía `public/_headers`      |
-| **Vercel**           | Conectar el repositorio. `vercel.json` ya está.  | ✅                            |
-| **GitHub Pages**     | Funciona, pero **no permite cabeceras propias**  | ❌ ffmpeg irá en un solo hilo |
+### Opción A · GitHub Pages, automático y sin registrarse en nada
+
+El repositorio ya trae el flujo de trabajo (`.github/workflows/deploy.yml`).
+Solo hay que encenderlo una vez:
+
+1. En GitHub, entra en **Settings** (la pestaña de arriba del repositorio).
+2. En la columna de la izquierda, **Pages**.
+3. En **Source**, elige **GitHub Actions**. No hay que guardar nada más.
+
+A partir de ahí, cada vez que cambie el código la web se reconstruye y se
+publica sola en:
+
+```
+https://<tu-usuario>.github.io/archivos/
+```
+
+El primer despliegue tarda unos 3 minutos. Puedes seguirlo en la pestaña
+**Actions**. Si falla, el propio flujo dice en cuál de los pasos: no publica
+nada que no compile o que rompa un test.
+
+GitHub Pages no permite cabeceras propias, así que ahí ffmpeg irá en un solo
+hilo.
+
+### Opción B · Netlify, Cloudflare o Vercel, con multihilo
+
+| Hosting              | Qué hacer                                        | Cabeceras                |
+| -------------------- | ------------------------------------------------ | ------------------------ |
+| **Netlify**          | Conectar el repositorio. `netlify.toml` ya está. | ✅ vía `public/_headers` |
+| **Cloudflare Pages** | Build: `npm run build`, salida: `dist`           | ✅ vía `public/_headers` |
+| **Vercel**           | Conectar el repositorio. `vercel.json` ya está.  | ✅                       |
+
+En los tres: crear cuenta, «importar proyecto desde GitHub», elegir este
+repositorio y confirmar. La configuración ya está en el repositorio, no hay que
+escribirla.
+
+### Si lo publicas en una subcarpeta
+
+Las rutas de los recursos son absolutas, así que una copia de `dist/` colgada en
+`ejemplo.com/loquesea/` daría 404 en todo. Hay que decírselo al compilar:
+
+```bash
+npm run build -- --base=/loquesea/
+```
+
+El flujo de GitHub Pages ya lo hace solo, con el nombre del repositorio.
 
 Puedes comprobar si el aislamiento está activo en **Ajustes → Rendimiento**
 dentro de la propia aplicación.

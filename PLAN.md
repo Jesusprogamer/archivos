@@ -626,6 +626,36 @@ Cubierto por 6 tests unitarios (`src/app/ErrorBoundary.test.tsx`, en jsdom) y 3
 end-to-end (`tests/e2e/recovery.spec.ts`), uno de ellos con JavaScript
 desactivado en el navegador.
 
+## 15 ter. Publicación
+
+El sitio solo funcionaba servido desde la raíz de un dominio. Dos sitios pedían
+ficheros de `public/` por una ruta absoluta construida en tiempo de ejecución,
+que es justo lo que Vite no puede reescribir: los núcleos de ffmpeg
+(`/ffmpeg/core`, `/ffmpeg/core-mt`) y las fuentes del editor de vídeo
+(`/fonts/*.woff2`). En GitHub Pages, que sirve desde `/<repo>/`, las dos cosas
+habrían dado 404 sin un solo aviso en la interfaz. Ahora pasan por
+`assetUrl()`, que las compone contra `import.meta.env.BASE_URL`, y un test
+impide que vuelva a colarse una ruta con `/` inicial.
+
+`.github/workflows/deploy.yml` compila con `--base=/<nombre-del-repo>/` y
+publica en GitHub Pages, pasando antes por `lint` y los tests: no se publica
+nada roto.
+
+**Verificado en las condiciones exactas de GitHub Pages** — compilado con
+`--base=/archivos/`, servido desde una subcarpeta con un servidor estático
+cualquiera y **sin** cabeceras de aislamiento:
+
+| Comprobación                           | Resultado                 |
+| -------------------------------------- | ------------------------- |
+| La interfaz carga                      | ✅                        |
+| `self.crossOriginIsolated`             | `false`, como se esperaba |
+| ffmpeg.wasm de un solo hilo, MP3 → OGG | ✅ `OggS` válido en 1,7 s |
+| Las fuentes `.woff2` resuelven         | ✅ HTTP 200               |
+| Errores de consola                     | ninguno                   |
+
+Es decir: el aislamiento de origen es una optimización, no un requisito, y eso
+deja de ser una suposición del §3.5 para ser una medición.
+
 ## 16. Lo que queda fuera, dicho claramente
 
 - **Los pesos reales del modelo de IA no se han podido probar aquí.** La red de

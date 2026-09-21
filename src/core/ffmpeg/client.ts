@@ -1,5 +1,6 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { capabilities } from '../util/capabilities';
+import { assetUrl } from '../util/assets';
 
 /**
  * The single ffmpeg.wasm instance.
@@ -48,8 +49,8 @@ export class FFmpegFailed extends Error {
 type LoadListener = (progress: LoadProgress) => void;
 
 const CORE_BASE = {
-  single: '/ffmpeg/core',
-  multi: '/ffmpeg/core-mt',
+  single: assetUrl('ffmpeg/core'),
+  multi: assetUrl('ffmpeg/core-mt'),
 } as const;
 
 class FFmpegClient {
