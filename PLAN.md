@@ -264,7 +264,7 @@ permisiva, hay que decirlo: es un cambio de rumbo, no un ajuste.**
 | 4 | Editor de audio: onda, edición y efectos | ✅ |
 | 5 | Editor de vídeo multipista | ✅ |
 | 6 | Visualizador de audio | ✅ |
-| 7 | Pulido, accesibilidad, documentación y despliegue | ⏳ |
+| 7 | Pulido, accesibilidad, documentación y despliegue | ✅ |
 
 ## 9. Cierre de la fase 1
 
@@ -553,3 +553,62 @@ recalculase.
 **lee los píxeles del canvas** y comprueba que los seis estilos pintan algo de
 verdad, otro que verifica que un preset restaura la escena completa, y otro que
 exporta un vídeo real y comprueba su cabecera EBML.
+
+## 15. Cierre de la fase 7
+
+**Accesibilidad auditada por una máquina, no a ojo.** Hay un test end-to-end por
+pantalla que inyecta axe-core en la interfaz real y falla ante cualquier
+violación de WCAG 2.1 AA seria o crítica, más uno que recorre la interfaz con el
+tabulador y falla si el foco cae en un control invisible —una trampa para quien
+usa lector de pantalla, porque no oye nada y no sabe dónde está.
+
+La auditoría encontró un fallo real que una revisión visual no habría detectado:
+`--fg-muted` daba **4,00:1** en el tema oscuro y **4,47:1** en el claro, ambos
+por debajo del 4,5:1 que exige AA, y ese token se usa casi solo en texto
+pequeño. Se recalcularon contra el fondo más desfavorable de cada tema. También
+apareció una etiqueta al 70 % de opacidad que caía a 4,16:1 sobre su propio
+fondo teñido al estar seleccionada.
+
+**Carga diferida de verdad.** Cada espacio de trabajo es un trozo aparte:
+
+| | Antes | Después |
+| --- | --- | --- |
+| Paquete inicial | 499 kB (155 kB gz) | **312 kB (98 kB gz)** |
+
+Quien abre Forja para convertir un PNG ya no descarga el editor de vídeo. Y
+ffmpeg.wasm (32 MB) y el modelo de IA siguen bajándose solo cuando se usan.
+
+**Medido con los archivos del criterio de aceptación**, en Chromium, sin un solo
+error de consola:
+
+| Archivo | Operación | Tiempo | Memoria |
+| --- | --- | --- | --- |
+| PNG de 8,3 Mpx | abrir · quitar fondo · exportar | 1,0 s · 0,7 s · 0,5 s | 195 MB |
+| MP3 de 10 min | abrir · normalizar · zoom | 3,8 s · 0,8 s · 0,6 s | 569 MB |
+| Vídeo 1080p de 2 min | abrir · dividir | 0,4 s · 0,2 s | 572 MB |
+
+**Totales del proyecto:** 361 tests unitarios y 55 end-to-end, `tsc -b` y
+`eslint` limpios.
+
+## 16. Lo que queda fuera, dicho claramente
+
+* **Los pesos reales del modelo de IA no se han podido probar aquí.** La red de
+  este entorno bloquea `huggingface.co`. La tubería completa **sí** está
+  verificada de extremo a extremo con un modelo ONNX sintético (§11). Falta una
+  prueba manual de la calidad del recorte en una red sin restricciones.
+* **H.264 y AAC no se han podido probar en este navegador.** El Chromium
+  disponible se compila sin códecs con patentes, así que ni los descodifica ni
+  los codifica por WebCodecs. Los tests usan WebM, que recorre exactamente el
+  mismo código. En Chrome o Edge de escritorio el MP4 funciona; en un navegador
+  sin esos códecs, Forja lo dice en lugar de fallar en silencio.
+* **La vía rápida de WebCodecs no está implementada.** Se decidió no incluirla
+  precisamente porque **no se podía verificar aquí**: el único códec que este
+  navegador acepta por WebCodecs es VP8/VP9, y muxear un flujo VP8 crudo a WebM
+  sin un muxer propio no es viable. Añadirla a ciegas habría sido exactamente el
+  tipo de función «que parece que funciona» que el encargo prohíbe. La
+  exportación actual pasa por ffmpeg.wasm, que está verificada. Es una mejora
+  bien acotada para quien tenga un navegador donde poder probarla.
+* **El audio de la vista previa del editor de vídeo** no puede reproducir dos
+  recortes solapados del mismo archivo a la vez (§13). La exportación sí.
+* Fuera de alcance desde el principio, y sigue fuera: cuentas, servidor,
+  colaboración, PDF, 3D, IA generativa y subida a redes sociales.

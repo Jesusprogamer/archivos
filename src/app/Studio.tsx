@@ -1,11 +1,12 @@
 import { HelpCircle, PanelLeftOpen, Settings as SettingsIcon, UploadCloud } from 'lucide-react';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useLibrary } from '../core/media/library';
 import type { MediaItem } from '../core/media/types';
 import { workspacesFor, type WorkspaceId } from '../core/registry/workspaces';
 import { useT } from '../i18n';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
+import { Spinner } from '../ui/Progress';
 import { cx } from '../ui/cx';
 import { Inspector } from './Inspector';
 import { Library } from './Library';
@@ -116,7 +117,13 @@ export function Studio({
         <Library collapsed={libraryCollapsed} onCollapse={onToggleLibrary} />
         <main className={styles.main} id="main">
           {View ? (
-            <View item={item} />
+            // Each workspace is a separate chunk, so a spinner covers the few
+            // hundred milliseconds it takes to arrive the first time.
+            <Suspense
+              fallback={<EmptyState icon={<Spinner size={26} />} title={t('common.loading')} />}
+            >
+              <View item={item} />
+            </Suspense>
           ) : (
             // No editor exists for this file yet; show what we actually know
             // about it rather than an empty frame.

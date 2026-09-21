@@ -84,7 +84,13 @@
 
   --fg: #e9edf3;
   --fg-secondary: #a7b1bf;
-  --fg-muted: #6e7889;
+  /*
+   * Measured, not chosen by eye. The previous value (#6e7889) scored 4.00:1
+   * against the lightest dark surface — below the 4.5:1 that WCAG AA asks for
+   * body text, and this token is used almost entirely on small text. axe-core
+   * flagged it on every screen.
+   */
+  --fg-muted: #858d9b;
   --fg-onaccent: #1c0c01;
 
   /* Ember: the forge, without the cliché of a flame icon. */
@@ -134,7 +140,8 @@
 
   --fg: #10151c;
   --fg-secondary: #4b5666;
-  --fg-muted: #6d7889;
+  /* 4.47:1 on white before; just under the threshold, and on small text. */
+  --fg-muted: #5d6675;
   --fg-onaccent: #ffffff;
 
   --accent: #c8501a;
