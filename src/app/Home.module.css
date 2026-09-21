@@ -1,0 +1,200 @@
+.home {
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: var(--s-5);
+  gap: var(--s-6);
+  background:
+    radial-gradient(90ch 50ch at 50% -20%, var(--accent-soft), transparent 70%),
+    var(--bg-canvas);
+}
+
+.topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-6);
+  max-width: 880px;
+  margin-inline: auto;
+  width: 100%;
+}
+
+.headline {
+  font-size: clamp(1.6rem, 4.4vw, 3.1rem);
+  font-weight: 640;
+  letter-spacing: -0.035em;
+  text-align: center;
+  text-wrap: balance;
+  line-height: 1.05;
+}
+
+.sub {
+  text-align: center;
+  text-wrap: balance;
+  color: var(--fg-secondary);
+  font-size: var(--text-lg);
+  max-width: 58ch;
+  margin-top: calc(var(--s-4) * -1);
+}
+
+/* ---- The drop zone: the one big target on the page ---- */
+.dropzone {
+  position: relative;
+  width: 100%;
+  min-height: clamp(168px, 26vh, 236px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  padding: var(--s-8) var(--s-5);
+  border-radius: var(--r-xl);
+  border: 1.5px dashed var(--border-strong);
+  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
+  color: var(--fg-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    border-color var(--dur-md) var(--ease-out),
+    background var(--dur-md) var(--ease-out),
+    transform var(--dur-md) var(--ease-out);
+}
+
+.dropzone:hover {
+  border-color: var(--accent);
+  background: var(--bg-surface);
+}
+
+.dropzone:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.dragging {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-soft);
+  transform: scale(1.005);
+}
+
+.dropIcon {
+  color: var(--accent);
+}
+
+.dropTitle {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: var(--tracking-tight);
+}
+
+.dropHint {
+  font-size: var(--text-sm);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--r-xs);
+  background: var(--bg-raised);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg);
+}
+
+.kinds {
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+/* ---- Capability strip: what this thing does, stated plainly ---- */
+.capabilities {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--s-2);
+  width: 100%;
+  list-style: none;
+  padding: 0;
+}
+
+.capability {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-surface) 55%, transparent);
+}
+
+.capabilityHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.capabilityHead svg {
+  color: var(--accent-fg);
+}
+
+.capabilityDesc {
+  font-size: var(--text-xs);
+  color: var(--fg-muted);
+  line-height: 1.45;
+}
+
+/* ---- Footer: the promise, and how to verify it ---- */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2) var(--s-3);
+  font-size: var(--text-xs);
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.privacy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-full);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  background: var(--success-soft);
+  color: var(--success-fg);
+  font-weight: 550;
+}
+
+@media (max-width: 900px) {
+  .capabilities {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .home {
+    padding: var(--s-4) var(--s-3);
+    gap: var(--s-4);
+  }
+  .sub {
+    font-size: var(--text-md);
+  }
+}

@@ -1,0 +1,216 @@
+/* Progress, spinners, empty states, toasts — the "what is happening" layer. */
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.progressHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-3);
+  font-size: var(--text-xs);
+}
+
+.progressLabel {
+  color: var(--fg-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressValue {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  flex: none;
+}
+
+.track {
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--bg-sunken);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.bar {
+  height: 100%;
+  border-radius: var(--r-full);
+  background: var(--accent);
+  transition: width var(--dur-md) var(--ease-out);
+}
+
+/* When progress cannot be measured, say so by moving rather than by lying. */
+.indeterminate {
+  width: 35% !important;
+  animation: slide 1.4s var(--ease-in-out) infinite;
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(340%);
+  }
+}
+
+.spinner {
+  display: inline-block;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Empty state ---- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  padding: var(--s-10) var(--s-6);
+  text-align: center;
+  color: var(--fg-muted);
+  min-height: 0;
+}
+
+.emptyIcon {
+  color: var(--fg-muted);
+  opacity: 0.55;
+}
+
+.emptyTitle {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--fg-secondary);
+}
+
+.emptyBody {
+  font-size: var(--text-sm);
+  max-width: 34ch;
+  line-height: 1.5;
+}
+
+/* ---- Toasts ---- */
+.toastRegion {
+  position: fixed;
+  inset-block-end: var(--s-4);
+  inset-inline-end: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  z-index: var(--z-toast);
+  pointer-events: none;
+  max-width: min(420px, calc(100vw - var(--s-8)));
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  background: var(--bg-overlay);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: toastIn var(--dur-md) var(--ease-out);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.toastInfo {
+  border-inline-start-color: var(--info);
+}
+.toastSuccess {
+  border-inline-start-color: var(--success);
+}
+.toastError {
+  border-inline-start-color: var(--danger);
+}
+.toastWarning {
+  border-inline-start-color: var(--warning);
+}
+
+.toastBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.toastTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.toastText {
+  font-size: var(--text-xs);
+  color: var(--fg-secondary);
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Inline notice ---- */
+.notice {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  border: 1px solid;
+}
+
+.noticeInfo {
+  background: var(--info-soft);
+  border-color: color-mix(in srgb, var(--info) 35%, transparent);
+  color: var(--fg-secondary);
+}
+.noticeWarning {
+  background: var(--warning-soft);
+  border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+  color: var(--fg-secondary);
+}
+.noticeError {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  color: var(--fg-secondary);
+}
+.noticeSuccess {
+  background: var(--success-soft);
+  border-color: color-mix(in srgb, var(--success) 35%, transparent);
+  color: var(--fg-secondary);
+}
+
+.noticeIcon {
+  flex: none;
+  margin-top: 1px;
+}
+.noticeInfo .noticeIcon {
+  color: var(--info-fg);
+}
+.noticeWarning .noticeIcon {
+  color: var(--warning-fg);
+}
+.noticeError .noticeIcon {
+  color: var(--danger-fg);
+}
+.noticeSuccess .noticeIcon {
+  color: var(--success-fg);
+}

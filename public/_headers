@@ -1,0 +1,20 @@
+# Netlify and Cloudflare Pages read this file.
+#
+# Cross-origin isolation is what lets ffmpeg.wasm use SharedArrayBuffer and run
+# multithreaded. Without it the app still works — it falls back to the
+# single-threaded core — but exports take noticeably longer.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+
+# The ffmpeg cores, including the pthread worker script. A worker loaded from a
+# cross-origin isolated page must carry COEP itself, or Chromium refuses it with
+# ERR_BLOCKED_BY_RESPONSE. This tripped us up during the spike.
+/ffmpeg/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: cross-origin
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
