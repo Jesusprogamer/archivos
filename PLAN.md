@@ -224,7 +224,7 @@ permisiva, hay que decirlo: es un cambio de rumbo, no un ajuste.**
 | 0 | Spikes, decisiones, este documento | ✅ |
 | 1 | Base: sistema de diseño, portada, detección, biblioteca, idiomas, tema | ✅ |
 | 2 | Convertidor (audio, vídeo, imagen) con cola y ZIP | ✅ |
-| 3 | Editor de imagen y los tres métodos de recorte de fondo | ⏳ |
+| 3 | Editor de imagen y los tres métodos de recorte de fondo | ✅ |
 | 4 | Editor de audio: onda, edición y efectos | ⏳ |
 | 5 | Editor de vídeo multipista | ⏳ |
 | 6 | Visualizador de audio | ⏳ |
@@ -293,3 +293,62 @@ tiempo restante, cancelación y descarga individual o en ZIP.
 cada destino) y 15 end-to-end que convierten archivos de verdad y comprueban la
 firma binaria de lo descargado: un JPG que empieza por `FFD8FF`, un OGG que
 empieza por `OggS`, un ZIP que empieza por `PK`. Cero errores de consola.
+
+## 11. Cierre de la fase 3
+
+**Funciona, comprobado con archivos reales en Chromium:** los tres métodos de
+quitar el fondo, combinables en cualquier orden sobre la misma imagen; recortar
+con proporciones fijas, girar en cuartos de vuelta, voltear, redimensionar;
+brillo, contraste y saturación con vista previa en vivo; fondo nuevo de color o
+imagen; y exportación a PNG, WebP y JPG con control de calidad.
+
+**El motor no depende de React.** `src/core/image/editor.ts` es una clase
+corriente que posee píxeles, máscara, historial y vista previa; la interfaz se
+suscribe con `useSyncExternalStore`. Eso permite probarlo sin DOM (13 tests) y
+es lo que pedía el encargo sobre separar el motor de la interfaz.
+
+**Por qué píxeles y máscara van separados.** Los tres métodos escriben en la
+misma máscara de un byte por píxel y **nunca** tocan los píxeles originales. De
+ahí salen dos propiedades que el encargo pedía y que están cubiertas por tests:
+los métodos se acumulan en cualquier orden con el mismo resultado, y una pasada
+nunca resucita lo que otra borró (se toma el mínimo). El pincel restaurador es
+la única forma de devolver algo, que es exactamente lo que se espera.
+
+**Detalles que no son obvios:**
+
+* La distancia de color se mide en luma/croma con la croma pesando el triple.
+  En RGB puro, una sombra sobre el fondo verde está tan «lejos» como un cambio
+  de tono, y el resultado es o bien halos o bien agujeros en el sujeto. La
+  escala (100 % = 400) está elegida contra números medidos, no a ojo: un verde
+  y ese mismo verde en sombra distan unos 85; un verde y un rojo, unos 590.
+* El relleno por zona conectada usa una pila explícita con arrays tipados. La
+  recursión desborda la pila con cualquier fotografía real.
+* El historial se limita **por memoria, no por número de pasos**: una instantánea
+  de una foto de 60 Mpx ocupa 300 MB y una de un icono, 160 kB. Contar bytes deja
+  historial generoso en imágenes pequeñas sin agotar la pestaña en las grandes.
+* La máscara se reescala con interpolación bilineal propia al redimensionar: un
+  canvas no puede transportar un canal único, y el vecino más cercano deja el
+  borde del recorte en escalera.
+* La exportación dibuja exactamente lo mismo que la vista previa, en el mismo
+  orden y con el mismo filtro. Cualquier otra cosa y el archivo guardado no
+  coincidiría con lo que se vio.
+
+**Sobre el modelo de IA, sin adornos.** La tubería completa —descarga con
+progreso, caché, preprocesado, sesión ONNX, postprocesado y reescalado de la
+máscara— **está verificada de extremo a extremo en un navegador real**, con un
+modelo ONNX sintético generado por `scripts/make-test-model.py` que devuelve el
+canal rojo. Sobre la imagen de prueba (fondo verde, cuadrado rojo) el test
+comprueba que el cuadrado sobrevive y el fondo se va, leyendo el canal alfa del
+PNG exportado.
+
+Lo que **no** se ha podido comprobar aquí son los pesos reales de U²-Net: el
+entorno de desarrollo tiene bloqueado `huggingface.co` por política de red. Por
+eso el panel de IA hace dos cosas: dice el tamaño y la licencia **antes** de
+descargar nada, y si la descarga falla lo explica y ofrece cargar un `.onnx`
+del disco, que funciona sin red alguna. Queda pendiente una prueba manual de la
+calidad del recorte con los pesos reales en una red sin restricciones.
+
+**Comprobaciones:** 125 tests unitarios y 23 end-to-end. Los del editor no
+comprueban que aparezca un botón: descargan el archivo exportado, lo vuelven a
+decodificar en el navegador y leen píxeles concretos para verificar que la
+transparencia, el color de relleno del JPG y el fondo nuevo son los correctos.

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { ffmpegCoreAssets } from './scripts/vite-plugin-ffmpeg-core.ts';
+import { wasmRuntimeAssets } from './scripts/vite-plugin-wasm-runtimes.ts';
 
 /**
  * Cross-origin isolation headers.
@@ -17,7 +17,7 @@ const crossOriginIsolation = {
 };
 
 export default defineConfig({
-  plugins: [react(), ffmpegCoreAssets()],
+  plugins: [react(), wasmRuntimeAssets()],
   server: { headers: crossOriginIsolation },
   preview: { headers: crossOriginIsolation },
   worker: { format: 'es' },
