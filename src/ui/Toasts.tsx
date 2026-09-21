@@ -27,6 +27,18 @@ export function Toasts() {
             <div className={styles.toastBody}>
               <p className={styles.toastTitle}>{toast.title}</p>
               {toast.text ? <p className={styles.toastText}>{toast.text}</p> : null}
+              {toast.action ? (
+                <button
+                  type="button"
+                  className={styles.toastAction}
+                  onClick={() => {
+                    dismiss(toast.id);
+                    toast.action?.onClick();
+                  }}
+                >
+                  {toast.action.label}
+                </button>
+              ) : null}
             </div>
             <button type="button" onClick={() => dismiss(toast.id)} aria-label={t('common.close')}>
               <X size={15} aria-hidden="true" />

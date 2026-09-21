@@ -1,4 +1,5 @@
 import { Component, type CSSProperties, type ErrorInfo, type ReactNode } from 'react';
+import { clearInstalledData } from '../pwa/reset';
 
 /**
  * Deliberately self-contained: no i18n, no CSS modules, no icon library.
@@ -43,23 +44,6 @@ function copy(): Copy {
   return lang.startsWith('en') ? COPY.en : COPY.es;
 }
 
-async function clearLocalData(): Promise<void> {
-  try {
-    localStorage.clear();
-  } catch {
-    // Private mode or blocked storage: nothing to clear.
-  }
-  try {
-    const databases = await indexedDB.databases?.();
-    for (const database of databases ?? []) {
-      if (database.name) indexedDB.deleteDatabase(database.name);
-    }
-  } catch {
-    // Firefox before 126 has no databases(); the reload alone will have to do.
-  }
-  location.reload();
-}
-
 interface Props {
   children: ReactNode;
 }
@@ -100,7 +84,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <button type="button" style={PRIMARY} onClick={() => location.reload()}>
               {text.reload}
             </button>
-            <button type="button" style={SECONDARY} onClick={() => void clearLocalData()}>
+            <button type="button" style={SECONDARY} onClick={() => void clearInstalledData().then(() => location.reload())}>
               {text.reset}
             </button>
           </div>

@@ -23,21 +23,24 @@ const MIME: Record<string, string> = {
 };
 
 /**
- * The `@ffmpeg/core*` packages expose a narrow `exports` map that hides both
+ * The `@ffmpeg/*` packages expose a narrow `exports` map that hides both
  * `dist/esm/*` and `package.json`, so resolve the package entry point and walk
- * up to the package root before joining the real path.
+ * up to the package root instead of asking for a subpath directly.
  */
-function resolveSource(spec: string): string {
-  const parts = spec.split('/');
-  const pkg = spec.startsWith('@') ? parts.slice(0, 2).join('/') : (parts[0] ?? spec);
-  const subpath = spec.slice(pkg.length + 1);
+export function packageRoot(pkg: string): string {
   let dir = path.dirname(require.resolve(pkg));
   while (!existsSync(path.join(dir, 'package.json'))) {
     const parent = path.dirname(dir);
     if (parent === dir) throw new Error(`Cannot locate the root of ${pkg}`);
     dir = parent;
   }
-  return path.join(dir, subpath);
+  return dir;
+}
+
+function resolveSource(spec: string): string {
+  const parts = spec.split('/');
+  const pkg = spec.startsWith('@') ? parts.slice(0, 2).join('/') : (parts[0] ?? spec);
+  return path.join(packageRoot(pkg), spec.slice(pkg.length + 1));
 }
 
 /**

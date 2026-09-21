@@ -5,6 +5,7 @@ import type { MediaItem } from '../core/media/types';
 import { workspacesFor, type WorkspaceId } from '../core/registry/workspaces';
 import { useT } from '../i18n';
 import { Button } from '../ui/Button';
+import { InstallButton } from '../pwa/InstallButton';
 import { EmptyState } from '../ui/EmptyState';
 import { Spinner } from '../ui/Progress';
 import { cx } from '../ui/cx';
@@ -87,6 +88,7 @@ export function Studio({
           <Button variant="ghost" size="sm" iconOnly aria-label={t('library.add')} onClick={() => fileInput?.click()}>
             <UploadCloud size={15} aria-hidden="true" />
           </Button>
+          <InstallButton iconOnly />
           <Button variant="ghost" size="sm" iconOnly aria-label={t('common.help')} onClick={onOpenHelp}>
             <HelpCircle size={15} aria-hidden="true" />
           </Button>

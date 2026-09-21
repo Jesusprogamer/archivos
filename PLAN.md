@@ -586,7 +586,7 @@ error de consola:
 | MP3 de 10 min        | abrir · normalizar · zoom       | 3,8 s · 0,8 s · 0,6 s | 569 MB  |
 | Vídeo 1080p de 2 min | abrir · dividir                 | 0,4 s · 0,2 s         | 572 MB  |
 
-**Totales del proyecto:** 367 tests unitarios y 58 end-to-end, `tsc -b` y
+**Totales del proyecto:** 378 tests unitarios y 64 end-to-end, `tsc -b` y
 `eslint` limpios.
 
 ## 15 bis. Arranque a prueba de fallos
@@ -655,6 +655,81 @@ cualquiera y **sin** cabeceras de aislamiento:
 
 Es decir: el aislamiento de origen es una optimización, no un requisito, y eso
 deja de ser una suposición del §3.5 para ser una medición.
+
+## 15 quater. Instalable como aplicación
+
+### Por qué a mano y no con `vite-plugin-pwa`
+
+Workbox es la opción por defecto y es MIT, así que la licencia no era el
+problema. Pesaron dos cosas en contra:
+
+1. **Las necesidades son atípicas.** Hay 63 MB de núcleos de ffmpeg y 14 MB de
+   ONNX Runtime que **no** pueden precargarse. Un precache generado
+   automáticamente los habría metido dentro, y una instalación de 78 MB por
+   adelantado no la quiere nadie.
+2. **Una caché mal planteada es de los pocos fallos irreversibles.** Deja la
+   aplicación rota para quien ya la instaló, y sobrevive a la recarga. Con tan
+   poca lógica, prefiero poder leerla entera a confiar en una configuración.
+
+El resultado son 140 líneas en `src/pwa/sw.ts`, y **ninguna dependencia nueva**:
+la compilación usa `transformWithOxc`, el transformador que Vite 8 ya trae.
+
+### Las tres reglas de la caché
+
+| Regla                                          | Por qué                                                                                               |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Solo se guarda lo inmutable por construcción   | Los ficheros del build llevan el hash del contenido en el nombre                                      |
+| La navegación va primero a la red              | Un despliegue malo se cura en la siguiente recarga en vez de quedarse servido desde una caché podrida |
+| Nunca se activa una versión nueva por sorpresa | La aplicación tiene `lazy` imports; cambiarle los ficheros a una sesión en marcha la rompe            |
+
+Reparto: **1,04 MB** de precarga (49 ficheros: interfaz, estilos, fuentes,
+iconos) frente a 77 MB que se guardan solo cuando alguien los usa.
+
+### Dos fallos que encontraron los tests, no yo
+
+**La aplicación se recargaba sola en la primera visita.** `clients.claim()`
+dispara `controllerchange` también cuando no hay ninguna actualización que
+aplicar, y el manejador recargaba sin mirar. La primera impresión de la
+aplicación era verla reiniciarse. Ahora solo recarga cuando el relevo lo ha
+pedido `applyUpdate()`.
+
+**Sin conexión cargaba el armazón pero no podía usarlo.** Este costó encontrarlo
+y merece quedar escrito. `vite preview` —y también Netlify y Cloudflare— mandan
+`Vary: Origin`. Vite marca sus scripts y hojas de estilo con `crossorigin`, así
+que el navegador los pide en modo `cors` y añade la cabecera `Origin`, cosa que
+no hacía la petición con la que se guardaron. Con `Vary` en juego, eso basta
+para que la Cache API los dé por distintos:
+
+```
+[sw] /assets/index-CVvsUUJU.js   cacheado: false  modo: cors     dest: script
+[sw] /icon.svg                   cacheado: true   modo: no-cors  dest: image
+```
+
+El icono, que se pide en `no-cors`, acertaba; el script, no. La solución es
+`{ ignoreVary: true }` en toda búsqueda: aquí todo es del mismo origen y lleva
+el hash del contenido, así que `Vary` no protege nada.
+
+### Comprobado
+
+|                                             | En la raíz | En `/archivos/`           |
+| ------------------------------------------- | ---------- | ------------------------- |
+| El service worker toma el control           | ✅         | ✅ (alcance `/archivos/`) |
+| `start_url` e iconos resuelven              | ✅         | ✅ HTTP 200               |
+| **Recarga sin conexión, interfaz completa** | ✅         | ✅                        |
+| ffmpeg y ONNX fuera de la precarga          | ✅         | ✅                        |
+| Errores de consola                          | ninguno    | ninguno                   |
+
+6 tests end-to-end y 8 unitarios. Los iconos se generan con
+`node scripts/make-icons.mjs` y se versionan; un test comprueba que miden lo que
+el manifiesto dice que miden, porque Chrome exige 192 y 512 para ofrecer la
+instalación y Android necesita uno `maskable` o recorta el logo a lo bruto.
+
+### Lo que no se puede probar aquí
+
+El diálogo de instalación depende de `beforeinstallprompt`, que Chromium no
+dispara en un perfil efímero sin interacción previa. Lo que sí está probado es
+la consecuencia que exige el encargo: **el botón no se dibuja si el navegador no
+puede instalar**, y Ajustes explica por qué en cada caso en lugar de callarse.
 
 ## 16. Lo que queda fuera, dicho claramente
 

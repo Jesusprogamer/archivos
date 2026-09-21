@@ -8,6 +8,8 @@ export interface Toast {
   readonly tone: ToastTone;
   readonly title: string;
   readonly text?: string;
+  /** An optional thing to do about it, shown as a button inside the toast. */
+  readonly action?: { readonly label: string; readonly onClick: () => void };
   /** Milliseconds before it disappears; errors stay until dismissed. */
   readonly duration: number;
 }
