@@ -1,0 +1,6 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Header rules live in public/_headers so the same file also serves
+# Cloudflare Pages. See PLAN.md §3.5 for why the ffmpeg worker needs its own.

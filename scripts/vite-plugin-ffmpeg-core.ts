@@ -27,7 +27,7 @@ const MIME: Record<string, string> = {
  */
 function resolveSource(spec: string): string {
   const parts = spec.split('/');
-  const pkg = spec.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]!;
+  const pkg = spec.startsWith('@') ? parts.slice(0, 2).join('/') : (parts[0] ?? spec);
   const subpath = spec.slice(pkg.length + 1);
   let dir = path.dirname(require.resolve(pkg));
   while (!existsSync(path.join(dir, 'package.json'))) {

@@ -1,0 +1,166 @@
+/*
+ * Design tokens — the single place colour, space, type and motion are defined.
+ * Components never hard-code a colour; they reach for a token.
+ */
+
+:root {
+  /* ---- Type ---- */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-display: 'Forja Display', var(--font-ui);
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+
+  --text-2xs: 0.6875rem; /* 11px — meters, timecodes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem; /* 13px — the workhorse size in a studio UI */
+  --text-md: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.5rem;
+  --text-4xl: 3.5rem;
+
+  --leading-tight: 1.15;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.04em;
+
+  /* ---- Space (4px base) ---- */
+  --s-0: 0;
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.25rem;
+  --s-6: 1.5rem;
+  --s-8: 2rem;
+  --s-10: 2.5rem;
+  --s-12: 3rem;
+  --s-16: 4rem;
+  --s-24: 6rem;
+
+  /* ---- Radii ---- */
+  --r-xs: 3px;
+  --r-sm: 5px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 18px;
+  --r-full: 999px;
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 110ms;
+  --dur-md: 180ms;
+  --dur-slow: 320ms;
+
+  /* ---- Layout ---- */
+  --topbar-h: 52px;
+  --rail-w: 60px;
+  --panel-w: 300px;
+
+  --z-panel: 10;
+  --z-sticky: 20;
+  --z-overlay: 100;
+  --z-toast: 200;
+}
+
+/* ---- Dark: the default. A studio should not glow. ---- */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-canvas: #0a0c0f;
+  --bg-sunken: #0e1116;
+  --bg-surface: #14181e;
+  --bg-raised: #1a1f26;
+  --bg-overlay: #212832;
+  --bg-hover: #ffffff0d;
+  --bg-active: #ffffff1a;
+
+  --border-subtle: #ffffff0f;
+  --border: #2b323c;
+  --border-strong: #3c4553;
+
+  --fg: #e9edf3;
+  --fg-secondary: #a7b1bf;
+  --fg-muted: #6e7889;
+  --fg-onaccent: #1c0c01;
+
+  /* Ember: the forge, without the cliché of a flame icon. */
+  --accent: #ff7a2f;
+  --accent-hover: #ff8c4c;
+  --accent-press: #ea6a20;
+  --accent-fg: #ff9a5e; /* accent as *text* on dark surfaces — AA at body size */
+  --accent-soft: #ff7a2f24;
+  --accent-ring: #ff7a2f66;
+
+  --success: #35c07c;
+  --success-fg: #5bd398;
+  --success-soft: #35c07c22;
+  --warning: #f0b23c;
+  --warning-fg: #f7c465;
+  --warning-soft: #f0b23c22;
+  --danger: #f05a50;
+  --danger-fg: #ff8078;
+  --danger-soft: #f05a5022;
+  --info: #56a8ff;
+  --info-fg: #7dbdff;
+  --info-soft: #56a8ff22;
+
+  --shadow-sm: 0 1px 2px #00000066;
+  --shadow-md: 0 6px 16px -4px #00000080, 0 2px 4px #0000004d;
+  --shadow-lg: 0 24px 48px -12px #000000a6, 0 4px 12px #00000066;
+
+  /* Transparency checkerboard */
+  --checker-a: #1c2129;
+  --checker-b: #262d37;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg-canvas: #eef1f5;
+  --bg-sunken: #e4e8ee;
+  --bg-surface: #ffffff;
+  --bg-raised: #ffffff;
+  --bg-overlay: #ffffff;
+  --bg-hover: #0a0c0f0a;
+  --bg-active: #0a0c0f14;
+
+  --border-subtle: #0a0c0f14;
+  --border: #d4dae2;
+  --border-strong: #b6bfcb;
+
+  --fg: #10151c;
+  --fg-secondary: #4b5666;
+  --fg-muted: #6d7889;
+  --fg-onaccent: #ffffff;
+
+  --accent: #c8501a;
+  --accent-hover: #b34714;
+  --accent-press: #9c3d10;
+  --accent-fg: #a9410f;
+  --accent-soft: #c8501a16;
+  --accent-ring: #c8501a55;
+
+  --success: #12794f;
+  --success-fg: #0f6844;
+  --success-soft: #12794f14;
+  --warning: #96640a;
+  --warning-fg: #7d5307;
+  --warning-soft: #96640a14;
+  --danger: #c4342a;
+  --danger-fg: #ab2b22;
+  --danger-soft: #c4342a14;
+  --info: #1861c4;
+  --info-fg: #1454ab;
+  --info-soft: #1861c414;
+
+  --shadow-sm: 0 1px 2px #10151c14;
+  --shadow-md: 0 6px 16px -4px #10151c1f, 0 2px 4px #10151c14;
+  --shadow-lg: 0 24px 48px -12px #10151c2e, 0 4px 12px #10151c1a;
+
+  --checker-a: #e8ecf1;
+  --checker-b: #f7f9fb;
+}

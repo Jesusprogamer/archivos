@@ -1,0 +1,17 @@
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  user-select: none;
+}
+
+.glyph {
+  color: var(--accent);
+  flex: none;
+}
+
+.text {
+  font-size: var(--text-lg);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}

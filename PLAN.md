@@ -222,10 +222,33 @@ permisiva, hay que decirlo: es un cambio de rumbo, no un ajuste.**
 | Fase | Contenido | Estado |
 | --- | --- | --- |
 | 0 | Spikes, decisiones, este documento | ✅ |
-| 1 | Base: sistema de diseño, portada, detección, biblioteca, idiomas, tema | ⏳ |
+| 1 | Base: sistema de diseño, portada, detección, biblioteca, idiomas, tema | ✅ |
 | 2 | Convertidor (audio, vídeo, imagen) con cola y ZIP | ⏳ |
 | 3 | Editor de imagen y los tres métodos de recorte de fondo | ⏳ |
 | 4 | Editor de audio: onda, edición y efectos | ⏳ |
 | 5 | Editor de vídeo multipista | ⏳ |
 | 6 | Visualizador de audio | ⏳ |
 | 7 | Pulido, accesibilidad, documentación y despliegue | ⏳ |
+
+## 9. Cierre de la fase 1
+
+**Funciona, comprobado en Chromium:** detección por firma binaria de 28 formatos
+(incluida la desambiguación de marcas ISO-BMFF, formas RIFF, DocType de EBML y
+códec de Ogg), biblioteca de medios con miniaturas y metadatos leídos del propio
+archivo, arrastrar/soltar/pegar en toda la ventana, español e inglés con cambio
+en caliente, temas oscuro y claro persistidos, diálogos accesibles con trampa de
+foco y atajos de teclado.
+
+**Comprobaciones:** 34 tests unitarios y 9 end-to-end, cero errores de consola en
+todos ellos, `tsc -b` y `eslint` limpios.
+
+**Decisiones tomadas durante la fase:**
+
+* Los espacios de trabajo se registran en `src/app/workspaceViews.ts` y la barra
+  de pestañas se construye a partir de ese registro. Una pestaña que no tenga
+  vista **no se dibuja**, así que en ningún momento del desarrollo hay un botón
+  que no lleve a ninguna parte. Mientras no haya editor para un archivo, el área
+  central muestra el inspector con lo que sabemos de él.
+* El idioma por defecto es el español, salvo que el navegador declare inglés.
+* TIFF y HEIC se **detectan** pero se rechazan con una explicación concreta: los
+  navegadores no traen descodificador. Es más útil que un «archivo no válido».
