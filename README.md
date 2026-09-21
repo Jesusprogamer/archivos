@@ -43,15 +43,42 @@ Forja es estático, así que vale cualquier hosting de archivos, **con una
 condición**: para que ffmpeg use varios hilos hace falta servir dos cabeceras
 (`COOP` y `COEP`). Sin ellas la aplicación funciona igual, solo que más lenta.
 
-| Hosting | Qué hacer | Cabeceras |
-| --- | --- | --- |
-| **Netlify** | Conectar el repositorio. `netlify.toml` ya está. | ✅ vía `public/_headers` |
-| **Cloudflare Pages** | Build: `npm run build`, salida: `dist` | ✅ vía `public/_headers` |
-| **Vercel** | Conectar el repositorio. `vercel.json` ya está. | ✅ |
-| **GitHub Pages** | Funciona, pero **no permite cabeceras propias** | ❌ ffmpeg irá en un solo hilo |
+| Hosting              | Qué hacer                                        | Cabeceras                     |
+| -------------------- | ------------------------------------------------ | ----------------------------- |
+| **Netlify**          | Conectar el repositorio. `netlify.toml` ya está. | ✅ vía `public/_headers`      |
+| **Cloudflare Pages** | Build: `npm run build`, salida: `dist`           | ✅ vía `public/_headers`      |
+| **Vercel**           | Conectar el repositorio. `vercel.json` ya está.  | ✅                            |
+| **GitHub Pages**     | Funciona, pero **no permite cabeceras propias**  | ❌ ffmpeg irá en un solo hilo |
 
 Puedes comprobar si el aislamiento está activo en **Ajustes → Rendimiento**
 dentro de la propia aplicación.
+
+---
+
+## Si la página sale en negro y no aparece nada
+
+Es el síntoma de que el JavaScript no ha llegado a ejecutarse. Desde la versión
+actual la propia página lo dice en pantalla en lugar de quedarse en negro, pero
+las causas son siempre las mismas tres:
+
+1. **Has abierto `index.html` con doble clic.** No funciona, y no es un fallo
+   que se pueda arreglar: Forja se carga como módulos de JavaScript y los
+   navegadores los bloquean cuando la dirección empieza por `file://`. Tiene que
+   servirse por HTTP. En desarrollo, `npm run dev`; con la versión compilada,
+   `npm run preview` (o subirla a cualquiera de los hostings de la tabla de
+   arriba).
+2. **Has subido `dist/` a un sitio que la sirve desde una subcarpeta.** Las
+   rutas de los recursos son absolutas (`/assets/…`), así que en
+   `ejemplo.com/forja/` darán 404. Publícala en la raíz del dominio, o compila
+   con `npm run build -- --base=/forja/`.
+3. **Otra cosa.** Abre la consola del navegador (`F12` → pestaña _Consola_) y
+   mira el primer error en rojo. Si la interfaz llegó a dibujarse y se rompió
+   después, verás una pantalla de error con el detalle técnico desplegable y un
+   botón para borrar los datos locales, que arregla los casos en los que un
+   proyecto autoguardado corrupto impide arrancar.
+
+Pase lo que pase, tus archivos no han salido del dispositivo: no hay servidor al
+que pudieran ir.
 
 ---
 
@@ -120,12 +147,12 @@ desde tu disco**, que funciona sin conexión.
 
 ## Qué navegadores
 
-| | Estado |
-| --- | --- |
-| **Chrome / Edge** (escritorio, últimas versiones) | Todo funciona. Es donde está probado. |
-| **Firefox** | Funciona. Sin `SharedArrayBuffer` en algunas configuraciones → ffmpeg en un hilo. |
-| **Safari** | Funciona lo principal. Puede no soportar AVIF al exportar; la opción no aparece si no. |
-| **Móvil** | Convertidor y editor de imagen. Los editores de audio y vídeo necesitan pantalla y ratón. |
+|                                                   | Estado                                                                                    |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Chrome / Edge** (escritorio, últimas versiones) | Todo funciona. Es donde está probado.                                                     |
+| **Firefox**                                       | Funciona. Sin `SharedArrayBuffer` en algunas configuraciones → ffmpeg en un hilo.         |
+| **Safari**                                        | Funciona lo principal. Puede no soportar AVIF al exportar; la opción no aparece si no.    |
+| **Móvil**                                         | Convertidor y editor de imagen. Los editores de audio y vídeo necesitan pantalla y ratón. |
 
 Forja **comprueba** lo que el navegador sabe hacer antes de ofrecerlo. Si AVIF
 no se puede codificar, la opción no está. Nunca aparece un botón que no
@@ -153,16 +180,16 @@ recalcularon contra el fondo más desfavorable de cada tema.
 
 Con los archivos que el encargo fija como criterio de aceptación, en Chromium:
 
-| Archivo | Operación | Tiempo | Memoria |
-| --- | --- | --- | --- |
-| PNG de 8,3 Mpx (3840×2160) | abrir en el editor | 1,0 s | 195 MB |
-| | quitar el fondo por color | 0,7 s | |
-| | exportar a PNG | 0,5 s | |
-| MP3 de 10 minutos | abrir en el editor de audio | 3,8 s | 569 MB |
-| | normalizar y aplicar | 0,8 s | |
-| | redibujar la onda con zoom | 0,6 s | |
-| Vídeo 1080p de 2 minutos | abrir en el editor de vídeo | 0,4 s | 572 MB |
-| | dividir en el cabezal | 0,2 s | |
+| Archivo                    | Operación                   | Tiempo | Memoria |
+| -------------------------- | --------------------------- | ------ | ------- |
+| PNG de 8,3 Mpx (3840×2160) | abrir en el editor          | 1,0 s  | 195 MB  |
+|                            | quitar el fondo por color   | 0,7 s  |         |
+|                            | exportar a PNG              | 0,5 s  |         |
+| MP3 de 10 minutos          | abrir en el editor de audio | 3,8 s  | 569 MB  |
+|                            | normalizar y aplicar        | 0,8 s  |         |
+|                            | redibujar la onda con zoom  | 0,6 s  |         |
+| Vídeo 1080p de 2 minutos   | abrir en el editor de vídeo | 0,4 s  | 572 MB  |
+|                            | dividir en el cabezal       | 0,2 s  |         |
 
 Cero errores de consola en todas ellas.
 
