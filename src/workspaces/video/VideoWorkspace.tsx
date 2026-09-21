@@ -19,7 +19,12 @@ import { useLibrary } from '../../core/media/library';
 import type { MediaItem } from '../../core/media/types';
 import { VideoEditor } from '../../core/video/editor';
 import { loadFonts } from '../../core/video/fonts';
-import { listSavedProjects, applySourceMapping, rebindSources, type SavedProject } from '../../core/video/autosave';
+import {
+  listSavedProjects,
+  applySourceMapping,
+  rebindSources,
+  type SavedProject,
+} from '../../core/video/autosave';
 import { projectDuration, type TrackKind } from '../../core/video/project';
 import { SourceManager } from '../../core/video/sources';
 import { baseName, formatTimecode, safeFileName } from '../../core/util/format';
@@ -72,8 +77,15 @@ export function VideoWorkspace({ item }: { item: MediaItem }) {
         if (cancelled) return;
         const track = editor.ensureTrack('video', 'V1');
         if (editor.getProject().tracks.every((candidate) => candidate.clips.length === 0)) {
-          const duration = Number.isFinite(source.duration) && source.duration > 0 ? source.duration : 5;
-          editor.addMediaClip(track.id, item.id, item.format.kind === 'image' ? 'image' : 'video', duration, 0);
+          const duration =
+            Number.isFinite(source.duration) && source.duration > 0 ? source.duration : 5;
+          editor.addMediaClip(
+            track.id,
+            item.id,
+            item.format.kind === 'image' ? 'image' : 'video',
+            duration,
+            0,
+          );
         }
         setReady(true);
       } catch (error) {
@@ -111,7 +123,9 @@ export function VideoWorkspace({ item }: { item: MediaItem }) {
       <EmptyState
         title={t('video.sourceFailed', { name: item.name })}
         body={t('video.sourceFailedHelp')}
-        action={<p style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-2xs)' }}>{failure}</p>}
+        action={
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-2xs)' }}>{failure}</p>
+        }
       />
     );
   }
@@ -182,10 +196,7 @@ function Editor({
     return map;
   }, [items, sources]);
 
-  const sourceNames = useMemo(
-    () => new Map(items.map((entry) => [entry.id, entry.name])),
-    [items],
-  );
+  const sourceNames = useMemo(() => new Map(items.map((entry) => [entry.id, entry.name])), [items]);
 
   const seek = useCallback(
     (time: number) => {
@@ -194,6 +205,22 @@ function Editor({
     },
     [editor, player],
   );
+
+  // Mientras suena manda el reloj del reproductor; parado, el del editor.
+  const playing = player.isPlaying;
+  const playhead = playing ? player.currentTime : editor.playhead;
+
+  /**
+   * Al parar, el editor se queda donde llegó la reproducción.
+   *
+   * Sin esto, pausar y pulsar «Dividir» cortaba donde se hubiera pulsado play,
+   * no donde se está viendo. `setPlayhead` no crea paso de deshacer, así que
+   * esto no ensucia el historial.
+   */
+  useEffect(() => {
+    if (playing) return;
+    editor.setPlayhead(player.currentTime);
+  }, [playing, editor, player]);
 
   // Keyboard shortcuts.
   useEffect(() => {
@@ -208,7 +235,10 @@ function Editor({
       } else if (mod && event.key.toLowerCase() === 'z' && !event.shiftKey) {
         event.preventDefault();
         editor.undo();
-      } else if (mod && (event.key.toLowerCase() === 'y' || (event.key.toLowerCase() === 'z' && event.shiftKey))) {
+      } else if (
+        mod &&
+        (event.key.toLowerCase() === 'y' || (event.key.toLowerCase() === 'z' && event.shiftKey))
+      ) {
         event.preventDefault();
         editor.redo();
       } else if (event.key.toLowerCase() === 's' && !mod) {
@@ -268,11 +298,21 @@ function Editor({
     <div className={styles.workspace}>
       <div className={styles.stage}>
         <div className={styles.previewArea}>
-          <canvas ref={canvasRef} className={styles.previewCanvas} aria-label={t('video.preview')} />
+          <canvas
+            ref={canvasRef}
+            className={styles.previewCanvas}
+            aria-label={t('video.preview')}
+          />
         </div>
 
         <div className={styles.transport}>
-          <Button variant="ghost" size="sm" iconOnly aria-label={t('audio.toStart')} onClick={() => seek(0)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label={t('audio.toStart')}
+            onClick={() => seek(0)}
+          >
             <SkipBack size={15} aria-hidden="true" />
           </Button>
           <Button
@@ -282,7 +322,11 @@ function Editor({
             aria-label={player.isPlaying ? t('audio.pause') : t('audio.play')}
             onClick={() => player.toggle()}
           >
-            {player.isPlaying ? <Pause size={15} aria-hidden="true" /> : <Play size={15} aria-hidden="true" />}
+            {player.isPlaying ? (
+              <Pause size={15} aria-hidden="true" />
+            ) : (
+              <Play size={15} aria-hidden="true" />
+            )}
           </Button>
           <span className={styles.time}>
             <span className={styles.timeCurrent}>{formatTimecode(player.currentTime)}</span>
@@ -292,10 +336,24 @@ function Editor({
 
           <span className={styles.spacer} />
 
-          <Button variant="ghost" size="sm" iconOnly aria-label={t('common.undo')} disabled={!editor.canUndo} onClick={() => editor.undo()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label={t('common.undo')}
+            disabled={!editor.canUndo}
+            onClick={() => editor.undo()}
+          >
             <Undo2 size={15} aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="sm" iconOnly aria-label={t('common.redo')} disabled={!editor.canRedo} onClick={() => editor.redo()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label={t('common.redo')}
+            disabled={!editor.canRedo}
+            onClick={() => editor.redo()}
+          >
             <Redo2 size={15} aria-hidden="true" />
           </Button>
         </div>
@@ -343,11 +401,17 @@ function Editor({
             <Type size={13} aria-hidden="true" />
             {t('video.addText')}
           </Button>
-          <Button size="sm" onClick={() => editor.addTrack('video', `V${project.tracks.length + 1}`)}>
+          <Button
+            size="sm"
+            onClick={() => editor.addTrack('video', `V${project.tracks.length + 1}`)}
+          >
             <Plus size={13} aria-hidden="true" />
             {t('video.addVideoTrack')}
           </Button>
-          <Button size="sm" onClick={() => editor.addTrack('audio', `A${project.tracks.length + 1}`)}>
+          <Button
+            size="sm"
+            onClick={() => editor.addTrack('audio', `A${project.tracks.length + 1}`)}
+          >
             <Plus size={13} aria-hidden="true" />
             {t('video.addAudioTrack')}
           </Button>
@@ -361,10 +425,20 @@ function Editor({
           >
             <Magnet size={14} aria-hidden="true" />
           </Button>
-          <Button size="sm" iconOnly aria-label={t('audio.zoomOut')} onClick={() => setZoom((z) => Math.max(0, z - 0.08))}>
+          <Button
+            size="sm"
+            iconOnly
+            aria-label={t('audio.zoomOut')}
+            onClick={() => setZoom((z) => Math.max(0, z - 0.08))}
+          >
             <ZoomOut size={14} aria-hidden="true" />
           </Button>
-          <Button size="sm" iconOnly aria-label={t('audio.zoomIn')} onClick={() => setZoom((z) => Math.min(1, z + 0.08))}>
+          <Button
+            size="sm"
+            iconOnly
+            aria-label={t('audio.zoomIn')}
+            onClick={() => setZoom((z) => Math.min(1, z + 0.08))}
+          >
             <ZoomIn size={14} aria-hidden="true" />
           </Button>
         </div>
@@ -372,6 +446,8 @@ function Editor({
         <Timeline
           editor={editor}
           zoom={zoom}
+          playhead={playhead}
+          playing={player.isPlaying}
           sourceDurations={sourceDurations}
           sourceNames={sourceNames}
           onSeek={seek}

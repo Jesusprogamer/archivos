@@ -586,7 +586,7 @@ error de consola:
 | MP3 de 10 min        | abrir · normalizar · zoom       | 3,8 s · 0,8 s · 0,6 s | 569 MB  |
 | Vídeo 1080p de 2 min | abrir · dividir                 | 0,4 s · 0,2 s         | 572 MB  |
 
-**Totales del proyecto:** 378 tests unitarios y 64 end-to-end, `tsc -b` y
+**Totales del proyecto:** 378 tests unitarios y 69 end-to-end, `tsc -b` y
 `eslint` limpios.
 
 ## 15 bis. Arranque a prueba de fallos
@@ -730,6 +730,68 @@ El diálogo de instalación depende de `beforeinstallprompt`, que Chromium no
 dispara en un perfil efímero sin interacción previa. Lo que sí está probado es
 la consecuencia que exige el encargo: **el botón no se dibuja si el navegador no
 puede instalar**, y Ajustes explica por qué en cada caso en lugar de callarse.
+
+## 15 quinquies. Tres fallos reportados de uso real
+
+### El cabezal no se movía al reproducir vídeo
+
+El contador de tiempo avanzaba y la línea se quedaba clavada donde se había
+pulsado play. La causa: la línea de tiempo dibujaba `editor.playhead`, pero
+durante la reproducción el reloj lo lleva `PreviewPlayer`, que tiene el suyo y
+solo se lo cuenta al editor al hacer _seek_. Los dos relojes existían por buenas
+razones —el editor no debe llenarse de cambios a 60 por segundo— pero nadie los
+había conectado para lo único que los necesitaba juntos: dibujar.
+
+Ahora la línea de tiempo recibe el cabezal vivo como propiedad, y al pausar el
+editor se coloca donde llegó la reproducción. Eso último arregla un segundo
+fallo que nadie había notado: **pausar y pulsar «Dividir» cortaba donde se había
+pulsado play**, no donde se estaba viendo.
+
+En el editor de audio el cabezal sí se movía. Lo que no hacía ninguno de los dos
+era **seguir al cabezal cuando se sale de la vista**: con zoom, a los pocos
+segundos se perdía de vista. Ambos lo hacen ya, y solo mientras se reproduce:
+si siguiera siempre, hacer clic cerca de un borde recolocaría la vista de golpe.
+
+### El visualizador dejaba la página inservible
+
+Reportado como «botones que buguean la página y solo deja recargar». No era un
+error de JavaScript: la consola estaba limpia y los elementos seguían en el DOM.
+Era geometría. Medido en el navegador:
+
+```
+antes:   canvas top=184   main.scrollTop=0
+después: canvas top=-466  main.scrollTop=650
+```
+
+El interruptor «Mostrar logo» abre un `<input type="file">` oculto con
+`.sr-only`. `.sr-only` posiciona el elemento en el flujo, así que al enfocarlo
+el navegador lo desplaza a la vista — y ese input vive al final de un panel
+largo. El área de trabajo se iba 650 px hacia arriba dentro de `<main>`, que
+tiene `overflow: hidden`.
+
+Y ahí está lo que lo hacía irreversible: **`overflow: hidden` crea un contenedor
+desplazable que el usuario no puede desplazar**. La rueda no lo devuelve. La
+única salida era recargar, exactamente como se reportó.
+
+Arreglado en dos capas, porque una sola habría tapado este caso dejando la
+trampa montada para el siguiente:
+
+| Capa                                                           | Qué hace                                                                       |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `.file-trigger` (`position: fixed`) en los 7 inputs de fichero | No hay nada que desplazar a la vista                                           |
+| `overflow: clip` en `.studio` y `.main`                        | No se crea contenedor de desplazamiento, así que la trampa deja de ser posible |
+
+`overflow: hidden` queda declarado antes como reserva para navegadores sin
+`clip`.
+
+### Las pruebas, comprobadas al revés
+
+Cinco tests end-to-end nuevos. Antes de darlos por buenos se revirtió cada
+arreglo para ver si fallaban, y el ejercicio sirvió: **uno de los cinco pasaba
+igual con el fallo presente**. Comprobaba el desplazamiento en el editor de
+audio, cuyo contenido no desborda, así que no había nada que desplazar ni con
+`hidden`. Reescrito contra el visualizador, que es el panel más alto, falla como
+debe. Un test que no puede fallar es peor que no tenerlo: da confianza falsa.
 
 ## 16. Lo que queda fuera, dicho claramente
 

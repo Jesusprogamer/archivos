@@ -160,7 +160,8 @@ export function AiTool({ pixels, width, height, onMask }: AiToolProps) {
         ref={fileInput}
         type="file"
         accept=".onnx,application/octet-stream"
-        className="sr-only"
+        className="file-trigger"
+        tabIndex={-1}
         aria-label={t('image.ai.useLocal')}
         onChange={(event) => {
           const file = event.target.files?.[0];

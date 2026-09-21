@@ -82,7 +82,8 @@ export function Home({ dragging, busy, onFiles, actions }: HomeProps) {
           ref={input}
           type="file"
           multiple
-          className="sr-only"
+          className="file-trigger"
+          tabIndex={-1}
           aria-label={t('a11y.fileInput')}
           onChange={(event) => {
             onFiles([...(event.target.files ?? [])]);
@@ -130,7 +131,8 @@ export function FilePickerButton({ onFiles }: { onFiles: (files: File[]) => void
         ref={input}
         type="file"
         multiple
-        className="sr-only"
+        className="file-trigger"
+        tabIndex={-1}
         aria-label={t('a11y.fileInput')}
         onChange={(event) => {
           onFiles([...(event.target.files ?? [])]);

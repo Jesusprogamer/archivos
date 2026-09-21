@@ -125,6 +125,29 @@ svg {
   border: 0;
 }
 
+/*
+ * Un `<input type="file">` que se abre por código, no pulsándolo.
+ *
+ * No usa `.sr-only`, y la diferencia importa: un elemento posicionado en el
+ * flujo hace que el navegador lo desplace a la vista al enfocarlo, y estos
+ * inputs viven al final de paneles largos. Eso dejaba el área de trabajo
+ * desplazada fuera de la pantalla, en un contenedor que el usuario no puede
+ * devolver a su sitio con la rueda: la única salida era recargar. Con
+ * `position: fixed` no hay nada que desplazar.
+ *
+ * Queda fuera del orden de tabulación a propósito: el control real es el botón
+ * visible que lo dispara, y dos paradas de tabulador para lo mismo confunden.
+ */
+.file-trigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .checkerboard {
   background-color: var(--checker-a);
   background-image:
