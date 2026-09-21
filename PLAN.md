@@ -84,6 +84,42 @@ caja de fondo + animaciones de entrada/salida de forma razonable, y la vista
 previa en canvas y la exportación deben usar exactamente el mismo código de
 dibujo para que lo que se ve sea lo que sale.
 
+
+### 3.6 Lo que el listado de codificadores no dice (medido en la fase 5)
+
+Que un codificador aparezca en `-encoders` significa que se compiló, **no que
+funcione**. Tres cosas se descubrieron ejecutándolo, no leyéndolo, y cada una
+obligó a cambiar una decisión ya tomada:
+
+| Intento | Resultado |
+| --- | --- |
+| `libvpx-vp9` (VP9), en **cualquier** configuración probada: con y sin `-row-mt`, `-deadline good` y `realtime`, `-threads 1`, modo bitrate constante | ❌ **`memory access out of bounds` tras el primer fotograma** |
+| `libvpx` (VP8) | ✅ funciona; con `-deadline realtime -cpu-used 5` es **4× más rápido** (411 ms frente a 1565 ms) |
+| `libopus` con entrada **estéreo**, a 44,1 kHz y a 48 kHz, VBR y CBR, en contenedor Ogg y en Matroska | ❌ **`memory access out of bounds`** |
+| `libopus` con entrada **mono** | ✅ funciona |
+| `libvorbis` en WebM | ✅ funciona |
+| `aac` en MP4, desde WAV de coma flotante o de 16 bits | ✅ funciona |
+| Demuxer `concat` y muxeo con `-c:v copy` | ✅ funciona |
+
+**Consecuencias, ya aplicadas:**
+
+* **WebM usa VP8 + Vorbis**, no VP9 + Opus. Comprime peor; es lo que este núcleo
+  sabe producir sin romperse.
+* **Opus se ha retirado** de la lista de formatos de salida. Ofrecerlo sabiendo
+  que falla con cualquier archivo estéreo —es decir, con casi todos— sería
+  precisamente el tipo de botón decorativo que este proyecto no admite. Forja
+  sigue **leyendo** Opus sin problema; lo que no hace es escribirlo.
+* Hay **tests unitarios que vigilan las tres cosas**: que los argumentos de WebM
+  no contengan `libvpx-vp9` ni `-row-mt`, y que ningún tipo de archivo ofrezca
+  `opus` como destino.
+
+**Cómo se coló hasta la fase 5.** El spike de la fase 0 comprobó que los
+codificadores *existían* y el test E2E de WebM **cancelaba la conversión antes
+de que el codificador llegara a arrancar**. Un test que cancela no prueba nada.
+Ahora hay dos tests que **completan**: uno que convierte a todos los formatos de
+audio y comprueba cada archivo, y otro que lleva una conversión WebM hasta el
+final y verifica la cabecera EBML del resultado.
+
 ### 3.4 WebCodecs
 
 Disponible, pero **el soporte por códec hay que preguntarlo en caliente**. En el
@@ -226,8 +262,8 @@ permisiva, hay que decirlo: es un cambio de rumbo, no un ajuste.**
 | 2 | Convertidor (audio, vídeo, imagen) con cola y ZIP | ✅ |
 | 3 | Editor de imagen y los tres métodos de recorte de fondo | ✅ |
 | 4 | Editor de audio: onda, edición y efectos | ✅ |
-| 5 | Editor de vídeo multipista | ⏳ |
-| 6 | Visualizador de audio | ⏳ |
+| 5 | Editor de vídeo multipista | ✅ |
+| 6 | Visualizador de audio | ✅ |
 | 7 | Pulido, accesibilidad, documentación y despliegue | ⏳ |
 
 ## 9. Cierre de la fase 1
@@ -415,3 +451,105 @@ la interfaz: descargan el archivo exportado, lo descodifican en el navegador y
 comprueban duración, número de canales y pico. Normalizar sube de −30 dB a
 cerca de la escala completa; duplicar la velocidad con tono fijo deja el
 archivo en la mitad de duración; silenciar deja el pico por debajo de 0,001.
+
+## 13. Cierre de la fase 5
+
+**Funciona, comprobado con archivos reales:** proyecto multipista con pistas de
+vídeo, texto y audio; dividir, recortar bordes arrastrando, mover entre pistas,
+duplicar, eliminar con y sin cerrar el hueco; bloquear, ocultar y silenciar
+pistas; posición, escala, rotación, opacidad, recorte, velocidad, volumen,
+fundidos y transiciones; texto con seis fuentes empaquetadas, contorno, sombra,
+caja de fondo, alineación y animaciones de entrada y salida; ajustes de color;
+fotogramas clave de opacidad, posición y escala; imán, zoom, deshacer y rehacer
+ilimitados; guardado automático; y exportación a MP4 y WebM.
+
+**El modelo de proyecto es JSON puro.** Ni React ni DOM dentro. `renderFrame()`
+es una función sobre ese objeto y **la usan igual la vista previa y el
+exportador**. Esa es la única garantía real de que lo exportado coincide con lo
+previsualizado; cualquier otra cosa es una promesa.
+
+**La exportación es determinista de verdad.** Cada fotograma de salida se obtiene
+buscando la posición exacta en cada vídeo que interviene y componiendo. No se
+graba la pantalla, así que el resultado no depende de la velocidad del equipo:
+una máquina lenta tarda más, no produce un vídeo peor. Los fotogramas se
+codifican **por segmentos** y se unen al final; mantener las imágenes de una
+película entera en el sistema de archivos WebAssembly agotaría la memoria mucho
+antes de llegar al codificador.
+
+**Deshacer es ilimitado aquí y limitado en los otros editores**, y no por
+descuido: un proyecto de vídeo son unos kilobytes de JSON por mucho metraje que
+referencie, mientras que una instantánea de una foto de 60 Mpx ocupa 300 MB.
+
+**Detalles que no son obvios:**
+
+* El cabezal manda sobre los elementos `<video>`, no al revés. Es lo que hace que
+  el desplazamiento, el bucle y los cambios de velocidad se comporten; cualquier
+  elemento que se desvíe más de unas centésimas se corrige.
+* **El audio de la vista previa sale de los propios elementos**, y eso tiene un
+  límite declarado: dos recortes del *mismo* archivo que se solapen no pueden
+  sonar a la vez, porque hay un elemento por fuente. **La exportación no comparte
+  esa limitación**: mezcla desde muestras descodificadas, así que lo que se
+  escribe siempre está completo.
+* Al dividir un recorte, el punto de entrada del segundo trozo avanza en tiempo
+  **de origen**, no de línea de tiempo: un recorte a media velocidad consume
+  material más despacio. Hay un test que lo fija.
+* Recortar el borde izquierdo mueve también el punto de entrada, para que el
+  contenido no se deslice bajo el cabezal.
+* El guardado automático guarda **la estructura, no los archivos**: un navegador
+  no puede quedarse con una referencia a un archivo del disco entre recargas.
+  Los recortes recuerdan su origen por nombre y tamaño, y al reabrir se vuelven
+  a enlazar; si falta alguno, se dice cuál.
+* Una operación que no cambia nada devuelve **el mismo objeto**. Sin eso, pulsar
+  algo inerte dejaba un paso de deshacer que no deshacía nada. Lo destapó un
+  test, no una revisión.
+
+**Comprobaciones:** 329 tests unitarios y 42 end-to-end. El de exportación
+descarga el vídeo generado, lo descodifica en el navegador y comprueba duración
+y resolución reales.
+
+## 14. Cierre de la fase 6
+
+**Funciona, comprobado en el navegador:** seis estilos —barras, barras en
+espejo, línea de onda, circular, espectro de área y partículas—, cada uno con
+colores y degradado, número de barras, grosor, tamaño, sensibilidad, suavizado,
+brillo, reacción a los graves, simetría y rango de frecuencias. Fondo de color,
+degradado o imagen con oscurecido; capa de texto con título, artista, fuente,
+posición, color y tamaño; logo con posición, tamaño y opacidad. Proporciones
+16:9, 9:16, 1:1 y 4:5, con resolución y fotogramas por segundo. Presets
+guardables. Exportación a MP4 y WebM con el audio incluido.
+
+**El audio se analiza entero antes de dibujar nada, y eso es la decisión
+importante.** Un `AnalyserNode` devuelve lo que haya en su búfer en el instante
+en que se le pregunta, que depende del momento exacto en que llegue el
+fotograma. Con él, **exportar dos veces daría dos vídeos distintos**. Aquí el
+fotograma número N siempre ve el mismo espectro, y hay un test que lo comprueba
+comparando dos análisis del mismo audio.
+
+Por el mismo motivo, **las partículas no se simulan**: su posición sale del
+índice del fotograma mediante una fórmula fija (una espiral de ángulo áureo, que
+las reparte sin que se amontonen). Un sistema con estado acumulado haría que
+cada exportación fuese distinta, y se desviaría si algún fotograma se
+recalculase.
+
+**Detalles que no son obvios:**
+
+* **La FFT está escrita a mano**, cuarenta líneas de radix-2 iterativo. Una
+  dependencia más que auditar y licenciar para algo que se ejecuta una vez por
+  fotograma sobre unos miles de muestras no compensaba.
+* **Las bandas se reparten en escala logarítmica.** Con bandas lineales, nueve
+  décimas partes de las barras cubrirían frecuencias que nadie distingue y los
+  graves —lo único que se mueve de verdad— quedarían aplastados en las dos
+  primeras.
+* **El suavizado es asimétrico**: las subidas son instantáneas y las bajadas
+  graduales. Una barra que llega tarde al golpe de un bombo parece rota; una que
+  baja despacio, no.
+* La ventana de análisis se **centra** en el instante del fotograma, no empieza
+  en él, para que un pico coincida con la imagen en vez de ir medio búfer por
+  detrás.
+* Se suman los canales antes de analizar: un visualizador que reacciona solo al
+  canal izquierdo se queda quieto en cuanto la música está panoramizada.
+
+**Comprobaciones:** 361 tests unitarios y 47 end-to-end. Entre ellos, uno que
+**lee los píxeles del canvas** y comprueba que los seis estilos pintan algo de
+verdad, otro que verifica que un preset restaura la escena completa, y otro que
+exporta un vídeo real y comprueba su cabecera EBML.

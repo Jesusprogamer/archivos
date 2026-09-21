@@ -183,6 +183,9 @@ class FFmpegClient {
     } catch (error) {
       if (cancelled) throw new FFmpegCancelled();
       if (error instanceof FFmpegFailed) throw error;
+      // A bare wasm trap ("memory access out of bounds") says nothing on its
+      // own; ffmpeg's last words usually say exactly what it choked on.
+      console.error('[forja] ffmpeg failed', args.join(' '), '\n', log.slice(-25).join('\n'));
       throw new FFmpegFailed(error instanceof Error ? error.message : String(error), log);
     } finally {
       options.signal?.removeEventListener('abort', abort);
@@ -200,11 +203,19 @@ class FFmpegClient {
     await ffmpeg.writeFile(name, new Uint8Array(data));
   }
 
-  async readFile(name: string): Promise<Uint8Array> {
+  /**
+   * Reads a file out of the virtual filesystem.
+   *
+   * The return type is narrowed to an `ArrayBuffer`-backed view: ffmpeg.wasm
+   * types it loosely enough to include `SharedArrayBuffer`, which `Blob` will
+   * not accept. Narrowing once here keeps the cast out of every caller, and it
+   * is accurate — the data really is a plain buffer.
+   */
+  async readFile(name: string): Promise<Uint8Array<ArrayBuffer>> {
     const ffmpeg = await this.load();
     const data = await ffmpeg.readFile(name);
     if (typeof data === 'string') throw new Error(`${name} came back as text`);
-    return data;
+    return data as Uint8Array<ArrayBuffer>;
   }
 
   async deleteFile(name: string): Promise<void> {
