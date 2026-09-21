@@ -1,0 +1,66 @@
+# Publica Forja en GitHub Pages en cada push.
+#
+# GitHub Pages sirve el sitio desde https://<usuario>.github.io/archivos/, es
+# decir desde una subcarpeta, así que la compilación necesita `--base`. Sin eso
+# el navegador buscaría los recursos en la raíz del dominio y solo se vería una
+# página en negro.
+#
+# Lo que GitHub Pages NO puede hacer es enviar las cabeceras COOP/COEP, así que
+# ffmpeg.wasm irá en un solo hilo: todo funciona, las exportaciones de vídeo
+# tardan más. Para tenerlas, ver "Publicarlo en internet" en el README.
+name: Publicar en GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      # Temporal: permite ver el sitio publicado antes de fusionar la PR.
+      # Se puede quitar esta línea una vez fusionada.
+      - claude/bold-pascal-dvuu6p
+  workflow_dispatch:
+
+# Un solo despliegue a la vez; si llegan varios, gana el último.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Las mismas comprobaciones que en local: no se publica nada que no
+      # compile, no pase el linter o rompa un test.
+      - run: npm run lint
+      - run: npm test
+
+      - name: Compilar
+        # El nombre del repositorio es la subcarpeta desde la que sirve Pages.
+        run: npm run build -- --base=/${{ github.event.repository.name }}/
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

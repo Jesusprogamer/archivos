@@ -15,16 +15,16 @@
 
 ## 2. Stack
 
-| Pieza | Elección | Motivo |
-| --- | --- | --- |
-| Build | Vite 8 + React 19 + TS 5.9 (`strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`) | Arranque rápido, *code splitting* por ruta y workers ES nativos. |
-| Estado | Zustand | Sin *boilerplate*, fuera de React cuando hace falta (el motor de render lo lee directo). |
-| Transcodificación | `@ffmpeg/ffmpeg` 0.12.15 + `@ffmpeg/core(-mt)` 0.12.10 | API `FFmpeg` moderna; el núcleo corre en un Web Worker propio. Una sola instancia reutilizada. |
-| Audio | Web Audio API + `OfflineAudioContext` | Render determinista y más rápido que tiempo real. |
-| Vídeo | Canvas 2D para componer; WebCodecs si está, ffmpeg.wasm si no | Ver §4.3. |
-| Recorte de fondo | ONNX Runtime Web + modelo local | Ver §5. |
-| ZIP | `fflate` | 8 kB, sin dependencias, *streaming*. |
-| Iconos | `lucide-react` | Set único y coherente; sin emojis como iconos. |
+| Pieza             | Elección                                                                                        | Motivo                                                                                         |
+| ----------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Build             | Vite 8 + React 19 + TS 5.9 (`strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`) | Arranque rápido, _code splitting_ por ruta y workers ES nativos.                               |
+| Estado            | Zustand                                                                                         | Sin _boilerplate_, fuera de React cuando hace falta (el motor de render lo lee directo).       |
+| Transcodificación | `@ffmpeg/ffmpeg` 0.12.15 + `@ffmpeg/core(-mt)` 0.12.10                                          | API `FFmpeg` moderna; el núcleo corre en un Web Worker propio. Una sola instancia reutilizada. |
+| Audio             | Web Audio API + `OfflineAudioContext`                                                           | Render determinista y más rápido que tiempo real.                                              |
+| Vídeo             | Canvas 2D para componer; WebCodecs si está, ffmpeg.wasm si no                                   | Ver §4.3.                                                                                      |
+| Recorte de fondo  | ONNX Runtime Web + modelo local                                                                 | Ver §5.                                                                                        |
+| ZIP               | `fflate`                                                                                        | 8 kB, sin dependencias, _streaming_.                                                           |
+| Iconos            | `lucide-react`                                                                                  | Set único y coherente; sin emojis como iconos.                                                 |
 
 Los núcleos de ffmpeg.wasm **se auto-alojan** (`scripts/vite-plugin-ffmpeg-core.ts`
 los copia desde `node_modules`). Depender de un CDN contradiría la promesa de
@@ -38,10 +38,10 @@ Ejecutados en Chromium (headless, `crossOriginIsolated = true`) contra
 
 ### 3.1 ffmpeg.wasm carga y convierte — **confirmado**
 
-* Núcleo de un hilo: carga en **727 ms**.
-* `tone.mp3` → `out.ogg` (libvorbis): código de salida 0, **19 413 bytes**,
+- Núcleo de un hilo: carga en **727 ms**.
+- `tone.mp3` → `out.ogg` (libvorbis): código de salida 0, **19 413 bytes**,
   cabecera `OggS`, **173 ms**.
-* Núcleo multihilo: carga en **1 386 ms**; transcodificación H.264 con
+- Núcleo multihilo: carga en **1 386 ms**; transcodificación H.264 con
   `threads=4` confirmado en el log de x264, 784 ms.
 
 ### 3.2 Qué trae de verdad este núcleo
@@ -54,29 +54,29 @@ Configuración real del build (leída del log):
 --enable-libfreetype --enable-libfribidi --enable-libass --enable-libzimg
 ```
 
-| | Disponible | **No disponible** |
-| --- | --- | --- |
-| Vídeo | libx264, libx265, libvpx (VP8), libvpx-vp9, mpeg4, gif | **libaom-av1** |
-| Audio | aac, libmp3lame, libvorbis, libopus, flac, pcm_s16le | — |
-| Imagen | png, mjpeg, libwebp, bmp | **AVIF** (necesita AV1) |
-| Muxers | mp4, webm, matroska, mp3, ogg, wav, flac, ipod (m4a), adts, gif, image2, opus | — |
+|        | Disponible                                                                    | **No disponible**       |
+| ------ | ----------------------------------------------------------------------------- | ----------------------- |
+| Vídeo  | libx264, libx265, libvpx (VP8), libvpx-vp9, mpeg4, gif                        | **libaom-av1**          |
+| Audio  | aac, libmp3lame, libvorbis, libopus, flac, pcm_s16le                          | —                       |
+| Imagen | png, mjpeg, libwebp, bmp                                                      | **AVIF** (necesita AV1) |
+| Muxers | mp4, webm, matroska, mp3, ogg, wav, flac, ipod (m4a), adts, gif, image2, opus | —                       |
 
 **Consecuencias directas sobre el encargo:**
 
-* **AV1 queda fuera.** No se ofrece en la interfaz. (El encargo lo daba por
+- **AV1 queda fuera.** No se ofrece en la interfaz. (El encargo lo daba por
   posible "si el build lo soporta": no lo soporta.)
-* **H.265 sí está**, al contrario de lo que suponía el encargo. Se ofrece como
+- **H.265 sí está**, al contrario de lo que suponía el encargo. Se ofrece como
   opción avanzada, avisando de que muchos reproductores y navegadores no lo
   leen.
-* **AVIF** solo por la vía del navegador (`canvas.toBlob('image/avif')`), y solo
+- **AVIF** solo por la vía del navegador (`canvas.toBlob('image/avif')`), y solo
   si el navegador lo soporta; se comprueba en tiempo de ejecución y si no, la
   opción no aparece.
 
 ### 3.3 `drawtext`: el riesgo era real
 
-* Sin `fontfile`: el filtro **falla al inicializarse**
+- Sin `fontfile`: el filtro **falla al inicializarse**
   (`Error initializing filter 'drawtext'`). El build no trae fuente por defecto.
-* Con `fontfile` escrito en el FS virtual: **funciona** (código 0).
+- Con `fontfile` escrito en el FS virtual: **funciona** (código 0).
 
 **Decisión:** el texto **no** se renderiza con `drawtext`. Se compone en canvas
 y se superpone en la exportación. Motivos: `drawtext` no da contorno + sombra +
@@ -84,37 +84,36 @@ caja de fondo + animaciones de entrada/salida de forma razonable, y la vista
 previa en canvas y la exportación deben usar exactamente el mismo código de
 dibujo para que lo que se ve sea lo que sale.
 
-
 ### 3.6 Lo que el listado de codificadores no dice (medido en la fase 5)
 
 Que un codificador aparezca en `-encoders` significa que se compiló, **no que
 funcione**. Tres cosas se descubrieron ejecutándolo, no leyéndolo, y cada una
 obligó a cambiar una decisión ya tomada:
 
-| Intento | Resultado |
-| --- | --- |
-| `libvpx-vp9` (VP9), en **cualquier** configuración probada: con y sin `-row-mt`, `-deadline good` y `realtime`, `-threads 1`, modo bitrate constante | ❌ **`memory access out of bounds` tras el primer fotograma** |
-| `libvpx` (VP8) | ✅ funciona; con `-deadline realtime -cpu-used 5` es **4× más rápido** (411 ms frente a 1565 ms) |
-| `libopus` con entrada **estéreo**, a 44,1 kHz y a 48 kHz, VBR y CBR, en contenedor Ogg y en Matroska | ❌ **`memory access out of bounds`** |
-| `libopus` con entrada **mono** | ✅ funciona |
-| `libvorbis` en WebM | ✅ funciona |
-| `aac` en MP4, desde WAV de coma flotante o de 16 bits | ✅ funciona |
-| Demuxer `concat` y muxeo con `-c:v copy` | ✅ funciona |
+| Intento                                                                                                                                              | Resultado                                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `libvpx-vp9` (VP9), en **cualquier** configuración probada: con y sin `-row-mt`, `-deadline good` y `realtime`, `-threads 1`, modo bitrate constante | ❌ **`memory access out of bounds` tras el primer fotograma**                                    |
+| `libvpx` (VP8)                                                                                                                                       | ✅ funciona; con `-deadline realtime -cpu-used 5` es **4× más rápido** (411 ms frente a 1565 ms) |
+| `libopus` con entrada **estéreo**, a 44,1 kHz y a 48 kHz, VBR y CBR, en contenedor Ogg y en Matroska                                                 | ❌ **`memory access out of bounds`**                                                             |
+| `libopus` con entrada **mono**                                                                                                                       | ✅ funciona                                                                                      |
+| `libvorbis` en WebM                                                                                                                                  | ✅ funciona                                                                                      |
+| `aac` en MP4, desde WAV de coma flotante o de 16 bits                                                                                                | ✅ funciona                                                                                      |
+| Demuxer `concat` y muxeo con `-c:v copy`                                                                                                             | ✅ funciona                                                                                      |
 
 **Consecuencias, ya aplicadas:**
 
-* **WebM usa VP8 + Vorbis**, no VP9 + Opus. Comprime peor; es lo que este núcleo
+- **WebM usa VP8 + Vorbis**, no VP9 + Opus. Comprime peor; es lo que este núcleo
   sabe producir sin romperse.
-* **Opus se ha retirado** de la lista de formatos de salida. Ofrecerlo sabiendo
+- **Opus se ha retirado** de la lista de formatos de salida. Ofrecerlo sabiendo
   que falla con cualquier archivo estéreo —es decir, con casi todos— sería
   precisamente el tipo de botón decorativo que este proyecto no admite. Forja
   sigue **leyendo** Opus sin problema; lo que no hace es escribirlo.
-* Hay **tests unitarios que vigilan las tres cosas**: que los argumentos de WebM
+- Hay **tests unitarios que vigilan las tres cosas**: que los argumentos de WebM
   no contengan `libvpx-vp9` ni `-row-mt`, y que ningún tipo de archivo ofrezca
   `opus` como destino.
 
 **Cómo se coló hasta la fase 5.** El spike de la fase 0 comprobó que los
-codificadores *existían* y el test E2E de WebM **cancelaba la conversión antes
+codificadores _existían_ y el test E2E de WebM **cancelaba la conversión antes
 de que el codificador llegara a arrancar**. Un test que cancela no prueba nada.
 Ahora hay dos tests que **completan**: uno que convierte a todos los formatos de
 audio y comprueba cada archivo, y otro que lleva una conversión WebM hasta el
@@ -126,7 +125,7 @@ Disponible, pero **el soporte por códec hay que preguntarlo en caliente**. En e
 Chromium headless de pruebas: VP8, VP9, AV1 y Opus sí; **H.264 y AAC no** (ese
 build no incluye códecs con patentes). Chrome y Edge de escritorio sí los traen.
 
-**Decisión:** WebCodecs es una vía rápida *opcional*, elegida tras
+**Decisión:** WebCodecs es una vía rápida _opcional_, elegida tras
 `isConfigSupported()`. ffmpeg.wasm es siempre el camino garantizado. Nunca se
 promete un formato en la interfaz basándose en WebCodecs sin haberlo consultado.
 
@@ -172,13 +171,13 @@ grabación de pantalla en tiempo real.
 
 ### 4.4 Memoria
 
-* Los archivos se guardan como `Blob`/`File`; nunca se mantienen `ArrayBuffer`
-  completos en el *store*.
-* `ffmpeg.writeFile()` **transfiere** el `Uint8Array` (queda *detached*). Lo
+- Los archivos se guardan como `Blob`/`File`; nunca se mantienen `ArrayBuffer`
+  completos en el _store_.
+- `ffmpeg.writeFile()` **transfiere** el `Uint8Array` (queda _detached_). Lo
   descubrimos en el spike: el buffer de entrada quedó en 0 bytes. Todo el código
   que necesite el buffer después debe copiarlo antes.
-* Se revocan los object URL al descartar un archivo de la biblioteca.
-* Aviso explícito por encima de **512 MB** y bloqueo con confirmación por encima
+- Se revocan los object URL al descartar un archivo de la biblioteca.
+- Aviso explícito por encima de **512 MB** y bloqueo con confirmación por encima
   de **2 GB**: la codificación puede necesitar bastante más memoria que el
   propio archivo.
 
@@ -186,11 +185,11 @@ grabación de pantalla en tiempo real.
 
 Descartados por licencia, pese a ser los más usados:
 
-| Modelo | Licencia | Veredicto |
-| --- | --- | --- |
-| BRIA RMBG-1.4 | Solo uso no comercial | **Descartado** |
-| MODNet (pesos) | CC BY-NC-SA | **Descartado** |
-| `@imgly/background-removal` | AGPL / comercial | **Descartado** |
+| Modelo                      | Licencia              | Veredicto      |
+| --------------------------- | --------------------- | -------------- |
+| BRIA RMBG-1.4               | Solo uso no comercial | **Descartado** |
+| MODNet (pesos)              | CC BY-NC-SA           | **Descartado** |
+| `@imgly/background-removal` | AGPL / comercial      | **Descartado** |
 
 **Elegido: U²-Net**, publicado bajo **Apache-2.0**, en dos tallas: `u2netp`
 (~4,7 MB, por defecto) y `u2net` (~176 MB, opcional). Alternativa contemplada y
@@ -211,17 +210,17 @@ normalización. Se puede apuntar a una copia auto-alojada.
 
 ## 6. Licencias de terceros
 
-| Paquete | Versión | Licencia | Por qué |
-| --- | --- | --- | --- |
-| react / react-dom | 19.3 | MIT | Interfaz. |
-| zustand | 5.0 | MIT | Estado. |
-| @ffmpeg/ffmpeg, @ffmpeg/util | 0.12 | MIT | Envoltorio. |
-| **@ffmpeg/core, @ffmpeg/core-mt** | 0.12.10 | **GPL-2.0-or-later** | Ver aviso abajo. |
-| fflate | 0.8 | MIT | ZIP. |
-| lucide-react | 1.47 | ISC | Iconos. |
-| onnxruntime-web | 1.30 | MIT | Inferencia local. |
-| vite, vitest, eslint, typescript, playwright | — | MIT / Apache-2.0 | Herramientas de desarrollo. |
-| Fuentes empaquetadas | — | SIL OFL 1.1 | Ver `public/fonts/OFL/`. |
+| Paquete                                      | Versión | Licencia             | Por qué                     |
+| -------------------------------------------- | ------- | -------------------- | --------------------------- |
+| react / react-dom                            | 19.3    | MIT                  | Interfaz.                   |
+| zustand                                      | 5.0     | MIT                  | Estado.                     |
+| @ffmpeg/ffmpeg, @ffmpeg/util                 | 0.12    | MIT                  | Envoltorio.                 |
+| **@ffmpeg/core, @ffmpeg/core-mt**            | 0.12.10 | **GPL-2.0-or-later** | Ver aviso abajo.            |
+| fflate                                       | 0.8     | MIT                  | ZIP.                        |
+| lucide-react                                 | 1.47    | ISC                  | Iconos.                     |
+| onnxruntime-web                              | 1.30    | MIT                  | Inferencia local.           |
+| vite, vitest, eslint, typescript, playwright | —       | MIT / Apache-2.0     | Herramientas de desarrollo. |
+| Fuentes empaquetadas                         | —       | SIL OFL 1.1          | Ver `public/fonts/OFL/`.    |
 
 ### Aviso de licencia que hay que tener presente
 
@@ -245,26 +244,26 @@ permisiva, hay que decirlo: es un cambio de rumbo, no un ajuste.**
 
 ## 7. Riesgos vivos
 
-| Riesgo | Mitigación |
-| --- | --- |
-| Archivos grandes agotan la memoria | Umbrales de aviso y bloqueo (§4.4); se muestra el tamaño estimado en memoria antes de empezar. |
-| Sin aislamiento de origen → un solo hilo | Se detecta `crossOriginIsolated` y se carga el núcleo que corresponda. La app funciona igual, más lenta, y lo dice en Ajustes. |
-| GitHub Pages no permite cabeceras | Despliegue recomendado: Netlify / Vercel / Cloudflare Pages, con `public/_headers` y `vercel.json` en el repositorio. |
-| `atempo` limita el cambio de velocidad a 0,5–2× | Se encadenan varias etapas de `atempo` para cubrir 0,25×–4×. |
-| Safari: sin `SharedArrayBuffer` en algunas versiones, `OfflineAudioContext` con peculiaridades | Se documenta en el README y se degrada, no se rompe. |
+| Riesgo                                                                                         | Mitigación                                                                                                                     |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Archivos grandes agotan la memoria                                                             | Umbrales de aviso y bloqueo (§4.4); se muestra el tamaño estimado en memoria antes de empezar.                                 |
+| Sin aislamiento de origen → un solo hilo                                                       | Se detecta `crossOriginIsolated` y se carga el núcleo que corresponda. La app funciona igual, más lenta, y lo dice en Ajustes. |
+| GitHub Pages no permite cabeceras                                                              | Despliegue recomendado: Netlify / Vercel / Cloudflare Pages, con `public/_headers` y `vercel.json` en el repositorio.          |
+| `atempo` limita el cambio de velocidad a 0,5–2×                                                | Se encadenan varias etapas de `atempo` para cubrir 0,25×–4×.                                                                   |
+| Safari: sin `SharedArrayBuffer` en algunas versiones, `OfflineAudioContext` con peculiaridades | Se documenta en el README y se degrada, no se rompe.                                                                           |
 
 ## 8. Fases
 
-| Fase | Contenido | Estado |
-| --- | --- | --- |
-| 0 | Spikes, decisiones, este documento | ✅ |
-| 1 | Base: sistema de diseño, portada, detección, biblioteca, idiomas, tema | ✅ |
-| 2 | Convertidor (audio, vídeo, imagen) con cola y ZIP | ✅ |
-| 3 | Editor de imagen y los tres métodos de recorte de fondo | ✅ |
-| 4 | Editor de audio: onda, edición y efectos | ✅ |
-| 5 | Editor de vídeo multipista | ✅ |
-| 6 | Visualizador de audio | ✅ |
-| 7 | Pulido, accesibilidad, documentación y despliegue | ✅ |
+| Fase | Contenido                                                              | Estado |
+| ---- | ---------------------------------------------------------------------- | ------ |
+| 0    | Spikes, decisiones, este documento                                     | ✅     |
+| 1    | Base: sistema de diseño, portada, detección, biblioteca, idiomas, tema | ✅     |
+| 2    | Convertidor (audio, vídeo, imagen) con cola y ZIP                      | ✅     |
+| 3    | Editor de imagen y los tres métodos de recorte de fondo                | ✅     |
+| 4    | Editor de audio: onda, edición y efectos                               | ✅     |
+| 5    | Editor de vídeo multipista                                             | ✅     |
+| 6    | Visualizador de audio                                                  | ✅     |
+| 7    | Pulido, accesibilidad, documentación y despliegue                      | ✅     |
 
 ## 9. Cierre de la fase 1
 
@@ -280,13 +279,13 @@ todos ellos, `tsc -b` y `eslint` limpios.
 
 **Decisiones tomadas durante la fase:**
 
-* Los espacios de trabajo se registran en `src/app/workspaceViews.ts` y la barra
+- Los espacios de trabajo se registran en `src/app/workspaceViews.ts` y la barra
   de pestañas se construye a partir de ese registro. Una pestaña que no tenga
   vista **no se dibuja**, así que en ningún momento del desarrollo hay un botón
   que no lleve a ninguna parte. Mientras no haya editor para un archivo, el área
   central muestra el inspector con lo que sabemos de él.
-* El idioma por defecto es el español, salvo que el navegador declare inglés.
-* TIFF y HEIC se **detectan** pero se rechazan con una explicación concreta: los
+- El idioma por defecto es el español, salvo que el navegador declare inglés.
+- TIFF y HEIC se **detectan** pero se rechazan con una explicación concreta: los
   navegadores no traen descodificador. Es más útil que un «archivo no válido».
 
 ## 10. Cierre de la fase 2
@@ -299,30 +298,30 @@ tiempo restante, cancelación y descarga individual o en ZIP.
 
 **Dos motores, según lo que convenga:**
 
-* **El codificador del navegador** para PNG, JPG, WebP y AVIF, en un Web Worker.
+- **El codificador del navegador** para PNG, JPG, WebP y AVIF, en un Web Worker.
   Convertir una foto no debería costar una descarga de 32 MB, y así no la cuesta.
-* **ffmpeg.wasm** para todo lo demás. Se descarga la primera vez que hace falta,
+- **ffmpeg.wasm** para todo lo demás. Se descarga la primera vez que hace falta,
   con barra de progreso real, y se queda en la caché.
 
 **Decisiones y detalles que no son obvios:**
 
-* La lista de formatos de salida sale de lo que este build soporta de verdad
+- La lista de formatos de salida sale de lo que este build soporta de verdad
   (§3.2), no de la documentación de ffmpeg. Por eso no hay AV1 y sí hay H.265,
   este último con un aviso sobre la reproducción.
-* AVIF solo aparece si `canvas.toDataURL('image/avif')` responde que sí. Si el
+- AVIF solo aparece si `canvas.toDataURL('image/avif')` responde que sí. Si el
   navegador miente y devuelve un PNG con otra etiqueta, la conversión falla de
   forma explícita en lugar de entregar un archivo mal nombrado.
-* El GIF se genera en dos pasadas con `palettegen`/`paletteuse` y **la misma
+- El GIF se genera en dos pasadas con `palettegen`/`paletteuse` y **la misma
   cadena de filtros en ambas**; si no coinciden, la paleta no corresponde a los
   fotogramas y el resultado se ve sucio. Hay un test que lo vigila.
-* `scale=trunc(iw/2)*2:trunc(ih/2)*2` incluso al «mantener el original»: H.264 y
+- `scale=trunc(iw/2)*2:trunc(ih/2)*2` incluso al «mantener el original»: H.264 y
   VP9 con croma 4:2:0 rechazan dimensiones impares.
-* Los presets de x264 son `veryfast` salvo en calidad alta: en WebAssembly un
+- Los presets de x264 son `veryfast` salvo en calidad alta: en WebAssembly un
   preset lento triplica la espera para una mejora que casi no se ve.
-* Cancelar termina el worker, porque ffmpeg.wasm no sabe interrumpir un comando
+- Cancelar termina el worker, porque ffmpeg.wasm no sabe interrumpir un comando
   en marcha. La interfaz lo dice antes de que el usuario se pregunte por qué la
   siguiente conversión tarda más en arrancar.
-* Aviso de tamaño antes de empezar (512 MB) y confirmación explícita por encima
+- Aviso de tamaño antes de empezar (512 MB) y confirmación explícita por encima
   de 2 GB. Nunca se impide, se informa.
 
 **Comprobaciones:** 53 tests unitarios (incluidos los argumentos de ffmpeg de
@@ -352,20 +351,20 @@ la única forma de devolver algo, que es exactamente lo que se espera.
 
 **Detalles que no son obvios:**
 
-* La distancia de color se mide en luma/croma con la croma pesando el triple.
+- La distancia de color se mide en luma/croma con la croma pesando el triple.
   En RGB puro, una sombra sobre el fondo verde está tan «lejos» como un cambio
   de tono, y el resultado es o bien halos o bien agujeros en el sujeto. La
   escala (100 % = 400) está elegida contra números medidos, no a ojo: un verde
   y ese mismo verde en sombra distan unos 85; un verde y un rojo, unos 590.
-* El relleno por zona conectada usa una pila explícita con arrays tipados. La
+- El relleno por zona conectada usa una pila explícita con arrays tipados. La
   recursión desborda la pila con cualquier fotografía real.
-* El historial se limita **por memoria, no por número de pasos**: una instantánea
+- El historial se limita **por memoria, no por número de pasos**: una instantánea
   de una foto de 60 Mpx ocupa 300 MB y una de un icono, 160 kB. Contar bytes deja
   historial generoso en imágenes pequeñas sin agotar la pestaña en las grandes.
-* La máscara se reescala con interpolación bilineal propia al redimensionar: un
+- La máscara se reescala con interpolación bilineal propia al redimensionar: un
   canvas no puede transportar un canal único, y el vecino más cercano deja el
   borde del recorte en escalera.
-* La exportación dibuja exactamente lo mismo que la vista previa, en el mismo
+- La exportación dibuja exactamente lo mismo que la vista previa, en el mismo
   orden y con el mismo filtro. Cualquier otra cosa y el archivo guardado no
   coincidiría con lo que se vio.
 
@@ -421,23 +420,23 @@ la reproducción.
 
 **Detalles que no son obvios:**
 
-* Las colas de reverberación y eco **se mezclan sobre el audio que viene
+- Las colas de reverberación y eco **se mezclan sobre el audio que viene
   después** en lugar de cortarse al final de la selección. Cortarlas deja un
   corte audible.
-* La respuesta al impulso de la reverberación se genera (ruido con decaimiento
+- La respuesta al impulso de la reverberación se genera (ruido con decaimiento
   exponencial y caída de agudos) en vez de empaquetar una grabación real: un
   impulso de verdad ocupa más de un megabyte por preset.
-* Los fundidos usan potencia constante por defecto. Un fundido lineal suena
+- Los fundidos usan potencia constante por defecto. Un fundido lineal suena
   como si se hundiera por la mitad, porque la sonoridad va con el cuadrado de
   la amplitud.
-* La posición de reproducción sale del reloj de audio, no de un temporizador:
+- La posición de reproducción sale del reloj de audio, no de un temporizador:
   `setInterval` deriva respecto al hardware y el cabezal se despegaría de la onda.
-* Los picos de la onda se cachean por (ventana, ancho, revisión de muestras).
+- Los picos de la onda se cachean por (ventana, ancho, revisión de muestras).
   Una pista de diez minutos son 26 millones de muestras por canal; recalcularlas
   al arrastrar el cabezal haría el editor inusable.
-* El historial se limita por memoria: una instantánea de diez minutos en estéreo
+- El historial se limita por memoria: una instantánea de diez minutos en estéreo
   ocupa 200 MB.
-* La vista previa descarta resultados obsoletos con un testigo. Arrastrar un
+- La vista previa descarta resultados obsoletos con un testigo. Arrastrar un
   deslizador lanza una petición por fotograma y algunos efectos tardan decenas
   de milisegundos, así que llegan desordenadas.
 
@@ -482,24 +481,24 @@ referencie, mientras que una instantánea de una foto de 60 Mpx ocupa 300 MB.
 
 **Detalles que no son obvios:**
 
-* El cabezal manda sobre los elementos `<video>`, no al revés. Es lo que hace que
+- El cabezal manda sobre los elementos `<video>`, no al revés. Es lo que hace que
   el desplazamiento, el bucle y los cambios de velocidad se comporten; cualquier
   elemento que se desvíe más de unas centésimas se corrige.
-* **El audio de la vista previa sale de los propios elementos**, y eso tiene un
-  límite declarado: dos recortes del *mismo* archivo que se solapen no pueden
+- **El audio de la vista previa sale de los propios elementos**, y eso tiene un
+  límite declarado: dos recortes del _mismo_ archivo que se solapen no pueden
   sonar a la vez, porque hay un elemento por fuente. **La exportación no comparte
   esa limitación**: mezcla desde muestras descodificadas, así que lo que se
   escribe siempre está completo.
-* Al dividir un recorte, el punto de entrada del segundo trozo avanza en tiempo
+- Al dividir un recorte, el punto de entrada del segundo trozo avanza en tiempo
   **de origen**, no de línea de tiempo: un recorte a media velocidad consume
   material más despacio. Hay un test que lo fija.
-* Recortar el borde izquierdo mueve también el punto de entrada, para que el
+- Recortar el borde izquierdo mueve también el punto de entrada, para que el
   contenido no se deslice bajo el cabezal.
-* El guardado automático guarda **la estructura, no los archivos**: un navegador
+- El guardado automático guarda **la estructura, no los archivos**: un navegador
   no puede quedarse con una referencia a un archivo del disco entre recargas.
   Los recortes recuerdan su origen por nombre y tamaño, y al reabrir se vuelven
   a enlazar; si falta alguno, se dice cuál.
-* Una operación que no cambia nada devuelve **el mismo objeto**. Sin eso, pulsar
+- Una operación que no cambia nada devuelve **el mismo objeto**. Sin eso, pulsar
   algo inerte dejaba un paso de deshacer que no deshacía nada. Lo destapó un
   test, no una revisión.
 
@@ -533,20 +532,20 @@ recalculase.
 
 **Detalles que no son obvios:**
 
-* **La FFT está escrita a mano**, cuarenta líneas de radix-2 iterativo. Una
+- **La FFT está escrita a mano**, cuarenta líneas de radix-2 iterativo. Una
   dependencia más que auditar y licenciar para algo que se ejecuta una vez por
   fotograma sobre unos miles de muestras no compensaba.
-* **Las bandas se reparten en escala logarítmica.** Con bandas lineales, nueve
+- **Las bandas se reparten en escala logarítmica.** Con bandas lineales, nueve
   décimas partes de las barras cubrirían frecuencias que nadie distingue y los
   graves —lo único que se mueve de verdad— quedarían aplastados en las dos
   primeras.
-* **El suavizado es asimétrico**: las subidas son instantáneas y las bajadas
+- **El suavizado es asimétrico**: las subidas son instantáneas y las bajadas
   graduales. Una barra que llega tarde al golpe de un bombo parece rota; una que
   baja despacio, no.
-* La ventana de análisis se **centra** en el instante del fotograma, no empieza
+- La ventana de análisis se **centra** en el instante del fotograma, no empieza
   en él, para que un pico coincida con la imagen en vez de ir medio búfer por
   detrás.
-* Se suman los canales antes de analizar: un visualizador que reacciona solo al
+- Se suman los canales antes de analizar: un visualizador que reacciona solo al
   canal izquierdo se queda quieto en cuanto la música está panoramizada.
 
 **Comprobaciones:** 361 tests unitarios y 47 end-to-end. Entre ellos, uno que
@@ -571,8 +570,8 @@ fondo teñido al estar seleccionada.
 
 **Carga diferida de verdad.** Cada espacio de trabajo es un trozo aparte:
 
-| | Antes | Después |
-| --- | --- | --- |
+|                 | Antes              | Después               |
+| --------------- | ------------------ | --------------------- |
 | Paquete inicial | 499 kB (155 kB gz) | **312 kB (98 kB gz)** |
 
 Quien abre Forja para convertir un PNG ya no descarga el editor de vídeo. Y
@@ -581,34 +580,101 @@ ffmpeg.wasm (32 MB) y el modelo de IA siguen bajándose solo cuando se usan.
 **Medido con los archivos del criterio de aceptación**, en Chromium, sin un solo
 error de consola:
 
-| Archivo | Operación | Tiempo | Memoria |
-| --- | --- | --- | --- |
-| PNG de 8,3 Mpx | abrir · quitar fondo · exportar | 1,0 s · 0,7 s · 0,5 s | 195 MB |
-| MP3 de 10 min | abrir · normalizar · zoom | 3,8 s · 0,8 s · 0,6 s | 569 MB |
-| Vídeo 1080p de 2 min | abrir · dividir | 0,4 s · 0,2 s | 572 MB |
+| Archivo              | Operación                       | Tiempo                | Memoria |
+| -------------------- | ------------------------------- | --------------------- | ------- |
+| PNG de 8,3 Mpx       | abrir · quitar fondo · exportar | 1,0 s · 0,7 s · 0,5 s | 195 MB  |
+| MP3 de 10 min        | abrir · normalizar · zoom       | 3,8 s · 0,8 s · 0,6 s | 569 MB  |
+| Vídeo 1080p de 2 min | abrir · dividir                 | 0,4 s · 0,2 s         | 572 MB  |
 
-**Totales del proyecto:** 361 tests unitarios y 55 end-to-end, `tsc -b` y
+**Totales del proyecto:** 367 tests unitarios y 58 end-to-end, `tsc -b` y
 `eslint` limpios.
+
+## 15 bis. Arranque a prueba de fallos
+
+Un aviso del usuario («un fondo negro, sin botones ni interfaz») dejó al
+descubierto un hueco real: no había **ningún** camino por el que un fallo de
+arranque llegara a contarse. El fondo negro era el `body` pintado por el CSS
+sobre un `#root` vacío, y ahí se acababa la información.
+
+No se pudo reproducir el fallo (`dist/` servido con un servidor estático
+cualquiera, sin aislamiento de origen, renderizaba bien y sin un solo mensaje en
+consola), así que la respuesta no es un parche a una causa concreta sino cerrar
+los dos huecos que producen esa misma pantalla:
+
+- **El paquete no llega a ejecutarse.** `index.html` lleva ahora dentro de
+  `#root` un mensaje estático, con su CSS en línea, que explica que la página
+  tiene que servirse por HTTP y cómo hacerlo. `createRoot` vacía el contenedor
+  al montar, así que desaparece solo en cuanto la aplicación arranca; una
+  animación con 2,5 s de retardo evita que parpadee en una carga normal. La
+  causa más probable de lo que describió el usuario está justo ahí: abrir el
+  archivo con doble clic (`file://`) bloquea los módulos de JavaScript, y
+  `<meta name="color-scheme" content="dark light">` hace que el navegador pinte
+  el fondo por defecto en negro. El síntoma encaja exactamente.
+- **La aplicación arranca y revienta al dibujarse.** Un `ErrorBoundary` de React
+  envuelve `<App />`. Es deliberadamente autosuficiente: sin i18n, sin CSS
+  modules, sin librería de iconos y con colores literales de reserva, porque
+  cualquier cosa que importara podría ser justo lo que ha fallado. Muestra el
+  error, el `componentStack`, un botón de recarga y otro que borra
+  `localStorage` e IndexedDB, que es la salida cuando un proyecto autoguardado
+  corrupto impide arrancar.
+
+Esto además cierra una exigencia del encargo que estaba a medias: «estados
+cuidados para todo: vacío, cargando, procesando, **error** y éxito». El estado
+de error existía en cada operación larga, pero no en el arranque.
+
+Cubierto por 6 tests unitarios (`src/app/ErrorBoundary.test.tsx`, en jsdom) y 3
+end-to-end (`tests/e2e/recovery.spec.ts`), uno de ellos con JavaScript
+desactivado en el navegador.
+
+## 15 ter. Publicación
+
+El sitio solo funcionaba servido desde la raíz de un dominio. Dos sitios pedían
+ficheros de `public/` por una ruta absoluta construida en tiempo de ejecución,
+que es justo lo que Vite no puede reescribir: los núcleos de ffmpeg
+(`/ffmpeg/core`, `/ffmpeg/core-mt`) y las fuentes del editor de vídeo
+(`/fonts/*.woff2`). En GitHub Pages, que sirve desde `/<repo>/`, las dos cosas
+habrían dado 404 sin un solo aviso en la interfaz. Ahora pasan por
+`assetUrl()`, que las compone contra `import.meta.env.BASE_URL`, y un test
+impide que vuelva a colarse una ruta con `/` inicial.
+
+`.github/workflows/deploy.yml` compila con `--base=/<nombre-del-repo>/` y
+publica en GitHub Pages, pasando antes por `lint` y los tests: no se publica
+nada roto.
+
+**Verificado en las condiciones exactas de GitHub Pages** — compilado con
+`--base=/archivos/`, servido desde una subcarpeta con un servidor estático
+cualquiera y **sin** cabeceras de aislamiento:
+
+| Comprobación                           | Resultado                 |
+| -------------------------------------- | ------------------------- |
+| La interfaz carga                      | ✅                        |
+| `self.crossOriginIsolated`             | `false`, como se esperaba |
+| ffmpeg.wasm de un solo hilo, MP3 → OGG | ✅ `OggS` válido en 1,7 s |
+| Las fuentes `.woff2` resuelven         | ✅ HTTP 200               |
+| Errores de consola                     | ninguno                   |
+
+Es decir: el aislamiento de origen es una optimización, no un requisito, y eso
+deja de ser una suposición del §3.5 para ser una medición.
 
 ## 16. Lo que queda fuera, dicho claramente
 
-* **Los pesos reales del modelo de IA no se han podido probar aquí.** La red de
+- **Los pesos reales del modelo de IA no se han podido probar aquí.** La red de
   este entorno bloquea `huggingface.co`. La tubería completa **sí** está
   verificada de extremo a extremo con un modelo ONNX sintético (§11). Falta una
   prueba manual de la calidad del recorte en una red sin restricciones.
-* **H.264 y AAC no se han podido probar en este navegador.** El Chromium
+- **H.264 y AAC no se han podido probar en este navegador.** El Chromium
   disponible se compila sin códecs con patentes, así que ni los descodifica ni
   los codifica por WebCodecs. Los tests usan WebM, que recorre exactamente el
   mismo código. En Chrome o Edge de escritorio el MP4 funciona; en un navegador
   sin esos códecs, Forja lo dice en lugar de fallar en silencio.
-* **La vía rápida de WebCodecs no está implementada.** Se decidió no incluirla
+- **La vía rápida de WebCodecs no está implementada.** Se decidió no incluirla
   precisamente porque **no se podía verificar aquí**: el único códec que este
   navegador acepta por WebCodecs es VP8/VP9, y muxear un flujo VP8 crudo a WebM
   sin un muxer propio no es viable. Añadirla a ciegas habría sido exactamente el
   tipo de función «que parece que funciona» que el encargo prohíbe. La
   exportación actual pasa por ffmpeg.wasm, que está verificada. Es una mejora
   bien acotada para quien tenga un navegador donde poder probarla.
-* **El audio de la vista previa del editor de vídeo** no puede reproducir dos
+- **El audio de la vista previa del editor de vídeo** no puede reproducir dos
   recortes solapados del mismo archivo a la vez (§13). La exportación sí.
-* Fuera de alcance desde el principio, y sigue fuera: cuentas, servidor,
+- Fuera de alcance desde el principio, y sigue fuera: cuentas, servidor,
   colaboración, PDF, 3D, IA generativa y subida a redes sociales.

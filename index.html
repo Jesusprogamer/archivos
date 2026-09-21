@@ -10,9 +10,100 @@
       content="Convierte y edita imagen, audio y vídeo sin subir nada a ningún servidor. Todo ocurre en tu dispositivo."
     />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <style>
+      /*
+        Last-resort fallback, inline on purpose: if the bundle never runs
+        (opened with file://, assets 404, a browser too old for the modules)
+        the page would otherwise be a silent black rectangle. React's
+        createRoot empties #root, so this disappears the moment the app
+        mounts. The delay keeps it from flashing on a normal, fast load.
+      */
+      #boot-fallback {
+        opacity: 0;
+        animation: boot-fallback-in 0.2s ease 2.5s forwards;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #0a0c0f;
+        color: #e9edf3;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        line-height: 1.55;
+      }
+      @keyframes boot-fallback-in {
+        to {
+          opacity: 1;
+        }
+      }
+      #boot-fallback > div {
+        width: min(560px, 100%);
+        padding: 24px;
+        border: 1px solid #2b323c;
+        border-radius: 12px;
+        background: #1a1f26;
+      }
+      #boot-fallback h1 {
+        margin: 0 0 12px;
+        font-size: 20px;
+      }
+      #boot-fallback p {
+        margin: 0 0 12px;
+        color: #a7b1bf;
+      }
+      #boot-fallback code {
+        padding: 1px 5px;
+        border-radius: 5px;
+        background: #0e1116;
+        font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+        font-size: 0.92em;
+        color: #e9edf3;
+      }
+      #boot-fallback ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #a7b1bf;
+      }
+      #boot-fallback li + li {
+        margin-top: 6px;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot-fallback">
+        <div>
+          <h1>Forja no ha podido arrancar</h1>
+          <p>
+            La interfaz no se ha cargado. Casi siempre es porque la página no se está sirviendo
+            desde un servidor web. Forja usa módulos de JavaScript, y los navegadores los bloquean
+            cuando el archivo se abre directamente desde el disco (<code>file://</code>).
+          </p>
+          <ul>
+            <li>Si tienes el código: <code>npm install</code> y luego <code>npm run dev</code>.</li>
+            <li>
+              Si has compilado con <code>npm run build</code>: la carpeta <code>dist/</code> hay que
+              servirla (<code>npm run preview</code>), no abrirla con doble clic.
+            </li>
+            <li>
+              Si ya la estás viendo en una web publicada: abre la consola del navegador (<code
+                >F12</code
+              >
+              → Consola) y mira qué error aparece.
+            </li>
+          </ul>
+          <p style="margin: 12px 0 0">
+            <strong>Forja no ha podido arrancar / Forja could not start.</strong> This page must be
+            served over HTTP, not opened from disk.
+          </p>
+        </div>
+      </div>
+    </div>
     <noscript>Forja necesita JavaScript: todo el procesamiento ocurre en tu navegador.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
