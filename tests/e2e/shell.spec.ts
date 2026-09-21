@@ -63,9 +63,9 @@ test.describe('Shell', () => {
 
     await expect(page.getByText('3 archivos')).toBeVisible();
     await page.getByRole('button', { name: /tone\.mp3/, exact: false }).first().click();
-    // Switching the active file switches the workspace subject with it.
-    await expect(page.locator('audio')).toBeVisible();
-    await expect(page.getByRole('button', { name: /^FLAC/ })).toBeVisible();
+    // Switching to an audio file switches the workspace to the audio editor.
+    await expect(page.getByRole('button', { name: 'Audio', exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Seleccionar todo' })).toBeVisible();
     expectNoErrors(errors);
   });
 

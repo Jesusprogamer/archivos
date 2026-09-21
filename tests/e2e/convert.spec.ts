@@ -41,6 +41,8 @@ test.describe('Converter', () => {
     await page.goto('/');
     await openFiles(page, ['tone.mp3']);
 
+    // An audio file opens in the audio editor, so switch to the converter.
+    await page.getByRole('button', { name: 'Convertir', exact: true }).first().click();
     await page.getByRole('button', { name: /^OGG/ }).click();
 
     const download = page.waitForEvent('download');

@@ -15,6 +15,7 @@ export function App() {
   const addFiles = useLibrary((state) => state.addFiles);
   const ingesting = useLibrary((state) => state.ingesting);
   const item = useActiveItem();
+  const workspace = useLibrary((state) => state.workspace);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -79,7 +80,7 @@ export function App() {
       )}
 
       <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <Help open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <Help open={helpOpen} onClose={() => setHelpOpen(false)} workspace={workspace} />
       <Toasts />
     </>
   );

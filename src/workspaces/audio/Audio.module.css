@@ -1,0 +1,237 @@
+.workspace {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr var(--panel-w);
+}
+
+.stage {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---- Transport ---- */
+.transport {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  flex-wrap: wrap;
+}
+
+.time {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  color: var(--fg-secondary);
+  min-width: 13ch;
+}
+
+.timeCurrent {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* ---- Level meter ---- */
+.meter {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--text-2xs);
+  color: var(--fg-muted);
+}
+
+.meterTrack {
+  width: 96px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.meterBar {
+  height: 100%;
+  /* Green through amber to red: the standard reading for "approaching clipping". */
+  background: linear-gradient(to right, var(--success) 0 70%, var(--warning) 70% 90%, var(--danger) 90%);
+  transform-origin: left;
+  transition: transform 60ms linear;
+}
+
+.meterPeak {
+  font-family: var(--font-mono);
+  min-width: 6ch;
+  text-align: right;
+}
+
+.clipping {
+  color: var(--danger-fg);
+  font-weight: 650;
+}
+
+/* ---- Waveform ---- */
+.waveArea {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: var(--bg-canvas);
+  overflow: hidden;
+  touch-action: none;
+  cursor: text;
+}
+
+.waveCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.timeline {
+  height: 22px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-sunken);
+  position: relative;
+  overflow: hidden;
+}
+
+.timelineCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.scrollbar {
+  height: 12px;
+  background: var(--bg-sunken);
+  border-top: 1px solid var(--border-subtle);
+  position: relative;
+  cursor: grab;
+}
+
+.scrollThumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: var(--r-full);
+  background: var(--border-strong);
+  min-width: 24px;
+}
+
+.scrollThumb:hover {
+  background: var(--fg-muted);
+}
+
+/* ---- Panel ---- */
+.panel {
+  border-inline-start: 1px solid var(--border);
+  background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panelBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.effectGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-1);
+}
+
+.effectButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--s-2) var(--s-1);
+  min-height: 52px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-sunken);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-secondary);
+  text-align: center;
+  line-height: 1.15;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.effectButton:hover {
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+
+.effectButton[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+}
+
+.editGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-1);
+}
+
+/* Long labels wrap rather than overflowing onto the next button. */
+.editGrid > button {
+  height: auto;
+  min-height: 30px;
+  padding-block: var(--s-1);
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.previewBar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  font-size: var(--text-xs);
+}
+
+.previewBar > span {
+  flex: 1;
+}
+
+.selectionInfo {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1000px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  .panel {
+    border-inline-start: none;
+    border-top: 1px solid var(--border);
+    max-height: 50vh;
+  }
+}

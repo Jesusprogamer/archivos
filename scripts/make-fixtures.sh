@@ -10,7 +10,7 @@ mkdir -p "$OUT"
 # 3 s stereo tone -> MP3 / WAV / OGG / FLAC / M4A
 "$FFMPEG" -y -hide_banner -loglevel error -f lavfi -i "sine=frequency=440:duration=3:sample_rate=44100" \
   -f lavfi -i "sine=frequency=660:duration=3:sample_rate=44100" \
-  -filter_complex "[0:a][1:a]amerge=inputs=2[a]" -map "[a]" -ac 2 -b:a 128k "$OUT/tone.mp3"
+  -filter_complex "[0:a][1:a]amerge=inputs=2,volume=8[a]" -map "[a]" -ac 2 -b:a 128k "$OUT/tone.mp3"
 "$FFMPEG" -y -hide_banner -loglevel error -i "$OUT/tone.mp3" -c:a pcm_s16le "$OUT/tone.wav"
 
 # 2 s 320x240 test pattern with audio -> MP4 (H.264 + AAC) and WebM (VP8 + Opus)

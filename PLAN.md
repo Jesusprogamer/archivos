@@ -225,7 +225,7 @@ permisiva, hay que decirlo: es un cambio de rumbo, no un ajuste.**
 | 1 | Base: sistema de diseño, portada, detección, biblioteca, idiomas, tema | ✅ |
 | 2 | Convertidor (audio, vídeo, imagen) con cola y ZIP | ✅ |
 | 3 | Editor de imagen y los tres métodos de recorte de fondo | ✅ |
-| 4 | Editor de audio: onda, edición y efectos | ⏳ |
+| 4 | Editor de audio: onda, edición y efectos | ✅ |
 | 5 | Editor de vídeo multipista | ⏳ |
 | 6 | Visualizador de audio | ⏳ |
 | 7 | Pulido, accesibilidad, documentación y despliegue | ⏳ |
@@ -352,3 +352,66 @@ calidad del recorte con los pesos reales en una red sin restricciones.
 comprueban que aparezca un botón: descargan el archivo exportado, lo vuelven a
 decodificar en el navegador y leen píxeles concretos para verificar que la
 transparencia, el color de relleno del JPG y el fondo nuevo son los correctos.
+
+## 12. Cierre de la fase 4
+
+**Funciona, comprobado con archivos reales:** forma de onda con zoom y
+desplazamiento, selección arrastrando, reproducción de la selección con bucle,
+medidor de nivel con aviso de saturación, cortar/copiar/pegar/borrar/recortar,
+insertar silencio, deshacer y rehacer, catorce efectos con vista previa no
+destructiva y exportación a MP3, WAV, OGG, Opus, FLAC y M4A.
+
+**El cabezal no es la selección.** Un arrastre de cero píxeles es una posición
+del cursor, no «nada seleccionado». Confundirlos obliga a equivocarse en una de
+dos cosas: o un efecto sin selección se aplica solo al cursor, o pegar sin
+selección ignora dónde está el cursor. Son campos distintos, y hay tests para
+ambos comportamientos.
+
+**Estirado temporal propio (WSOLA).** El tono y la velocidad con tono fijo
+necesitan estirar el tiempo. Las alternativas se descartaron con motivo:
+`rubberband` no está en este build de ffmpeg (§3.2), encadenar `atempo` obligaría
+a descargar 32 MB de WebAssembly para mover un deslizador, y un solapamiento sin
+búsqueda produce el timbre metálico que todo el mundo reconoce. La búsqueda de
+alineación por correlación es lo que lo hace aceptable. Los tests lo verifican
+midiendo la frecuencia por cruces por cero: estirar al doble mantiene 440 Hz,
+subir una octava da ~880 Hz **sin** cambiar la duración.
+
+**Reparto entre código propio y el navegador.** Ganancia, normalizar, fundidos,
+invertir y silenciar se escriben directamente sobre las muestras: son pocas
+líneas y funcionan igual en un test que en el navegador. Ecualizador,
+reverberación, eco, compresor y filtros van por `OfflineAudioContext`, porque
+los nodos del navegador están bien probados y suenan exactamente igual que en
+la reproducción.
+
+**Detalles que no son obvios:**
+
+* Las colas de reverberación y eco **se mezclan sobre el audio que viene
+  después** en lugar de cortarse al final de la selección. Cortarlas deja un
+  corte audible.
+* La respuesta al impulso de la reverberación se genera (ruido con decaimiento
+  exponencial y caída de agudos) en vez de empaquetar una grabación real: un
+  impulso de verdad ocupa más de un megabyte por preset.
+* Los fundidos usan potencia constante por defecto. Un fundido lineal suena
+  como si se hundiera por la mitad, porque la sonoridad va con el cuadrado de
+  la amplitud.
+* La posición de reproducción sale del reloj de audio, no de un temporizador:
+  `setInterval` deriva respecto al hardware y el cabezal se despegaría de la onda.
+* Los picos de la onda se cachean por (ventana, ancho, revisión de muestras).
+  Una pista de diez minutos son 26 millones de muestras por canal; recalcularlas
+  al arrastrar el cabezal haría el editor inusable.
+* El historial se limita por memoria: una instantánea de diez minutos en estéreo
+  ocupa 200 MB.
+* La vista previa descarta resultados obsoletos con un testigo. Arrastrar un
+  deslizador lanza una petición por fotograma y algunos efectos tardan decenas
+  de milisegundos, así que llegan desordenadas.
+
+**Un defecto encontrado por el pantallazo, no por los tests:** el botón
+«Recortar a la selección» se desbordaba sobre el de al lado, y el sufijo de
+unidad de los deslizadores caía a una línea propia. Los tests pasaban igual.
+Ambos corregidos.
+
+**Comprobaciones:** 225 tests unitarios y 33 end-to-end. Los del audio no miran
+la interfaz: descargan el archivo exportado, lo descodifican en el navegador y
+comprueban duración, número de canales y pico. Normalizar sube de −30 dB a
+cerca de la escala completa; duplicar la velocidad con tono fijo deja el
+archivo en la mitad de duración; silenciar deja el pico por debajo de 0,001.

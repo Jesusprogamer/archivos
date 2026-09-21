@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { MediaItem } from '../core/media/types';
 import type { WorkspaceId } from '../core/registry/workspaces';
+import { AudioWorkspace } from '../workspaces/audio/AudioWorkspace';
 import { ConvertWorkspace } from '../workspaces/convert/ConvertWorkspace';
 import { ImageWorkspace } from '../workspaces/image/ImageWorkspace';
 
@@ -18,4 +19,5 @@ export interface WorkspaceViewProps {
 export const WORKSPACE_VIEWS: Partial<Record<WorkspaceId, ComponentType<WorkspaceViewProps>>> = {
   convert: ConvertWorkspace,
   image: ImageWorkspace,
+  audio: AudioWorkspace,
 };

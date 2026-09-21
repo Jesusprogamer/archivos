@@ -4,13 +4,21 @@ import { modifierLabel } from './useFileDrop';
 import { shortcutGroups } from './shortcuts';
 import panel from './Panel.module.css';
 
-export function Help({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function Help({
+  open,
+  onClose,
+  workspace,
+}: {
+  open: boolean;
+  onClose: () => void;
+  workspace?: string | undefined;
+}) {
   const t = useT();
   const mod = modifierLabel();
 
   return (
     <Dialog open={open} onClose={onClose} title={t('help.title')} width={520}>
-      {shortcutGroups().map((group) => (
+      {shortcutGroups(workspace).map((group) => (
         <section key={group.titleKey}>
           <h3 className={panel.sectionTitle}>{t(group.titleKey)}</h3>
           <dl className={panel.shortcuts}>
