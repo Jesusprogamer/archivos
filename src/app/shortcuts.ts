@@ -24,6 +24,19 @@ export const GLOBAL_SHORTCUTS: ShortcutGroup = {
   ],
 };
 
-export function shortcutGroups(): readonly ShortcutGroup[] {
-  return [GLOBAL_SHORTCUTS];
+/** Only listed while the audio editor is open, because that is where they work. */
+export const AUDIO_SHORTCUTS: ShortcutGroup = {
+  titleKey: 'workspace.audio',
+  shortcuts: [
+    { keys: ['Space'], labelKey: 'audio.play' },
+    { keys: ['Mod', 'A'], labelKey: 'audio.selectAll' },
+    { keys: ['Mod', 'X'], labelKey: 'audio.cut' },
+    { keys: ['Mod', 'C'], labelKey: 'audio.copy' },
+    { keys: ['Mod', 'V'], labelKey: 'audio.paste' },
+    { keys: ['Supr'], labelKey: 'audio.delete' },
+  ],
+};
+
+export function shortcutGroups(workspace?: string): readonly ShortcutGroup[] {
+  return workspace === 'audio' ? [GLOBAL_SHORTCUTS, AUDIO_SHORTCUTS] : [GLOBAL_SHORTCUTS];
 }

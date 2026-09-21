@@ -223,9 +223,9 @@ permisiva, hay que decirlo: es un cambio de rumbo, no un ajuste.**
 | --- | --- | --- |
 | 0 | Spikes, decisiones, este documento | ✅ |
 | 1 | Base: sistema de diseño, portada, detección, biblioteca, idiomas, tema | ✅ |
-| 2 | Convertidor (audio, vídeo, imagen) con cola y ZIP | ⏳ |
-| 3 | Editor de imagen y los tres métodos de recorte de fondo | ⏳ |
-| 4 | Editor de audio: onda, edición y efectos | ⏳ |
+| 2 | Convertidor (audio, vídeo, imagen) con cola y ZIP | ✅ |
+| 3 | Editor de imagen y los tres métodos de recorte de fondo | ✅ |
+| 4 | Editor de audio: onda, edición y efectos | ✅ |
 | 5 | Editor de vídeo multipista | ⏳ |
 | 6 | Visualizador de audio | ⏳ |
 | 7 | Pulido, accesibilidad, documentación y despliegue | ⏳ |
@@ -252,3 +252,166 @@ todos ellos, `tsc -b` y `eslint` limpios.
 * El idioma por defecto es el español, salvo que el navegador declare inglés.
 * TIFF y HEIC se **detectan** pero se rechazan con una explicación concreta: los
   navegadores no traen descodificador. Es más útil que un «archivo no válido».
+
+## 10. Cierre de la fase 2
+
+**Funciona, comprobado con archivos reales en Chromium:** audio → MP3, WAV, OGG,
+Opus, FLAC y M4A; vídeo → MP4, WebM, MKV, MOV, H.265 y GIF; extracción del audio
+de un vídeo a cualquier formato de audio; imagen → PNG, JPG, WebP, AVIF (si el
+navegador lo permite), BMP y GIF. Cola con varios archivos, progreso real con
+tiempo restante, cancelación y descarga individual o en ZIP.
+
+**Dos motores, según lo que convenga:**
+
+* **El codificador del navegador** para PNG, JPG, WebP y AVIF, en un Web Worker.
+  Convertir una foto no debería costar una descarga de 32 MB, y así no la cuesta.
+* **ffmpeg.wasm** para todo lo demás. Se descarga la primera vez que hace falta,
+  con barra de progreso real, y se queda en la caché.
+
+**Decisiones y detalles que no son obvios:**
+
+* La lista de formatos de salida sale de lo que este build soporta de verdad
+  (§3.2), no de la documentación de ffmpeg. Por eso no hay AV1 y sí hay H.265,
+  este último con un aviso sobre la reproducción.
+* AVIF solo aparece si `canvas.toDataURL('image/avif')` responde que sí. Si el
+  navegador miente y devuelve un PNG con otra etiqueta, la conversión falla de
+  forma explícita en lugar de entregar un archivo mal nombrado.
+* El GIF se genera en dos pasadas con `palettegen`/`paletteuse` y **la misma
+  cadena de filtros en ambas**; si no coinciden, la paleta no corresponde a los
+  fotogramas y el resultado se ve sucio. Hay un test que lo vigila.
+* `scale=trunc(iw/2)*2:trunc(ih/2)*2` incluso al «mantener el original»: H.264 y
+  VP9 con croma 4:2:0 rechazan dimensiones impares.
+* Los presets de x264 son `veryfast` salvo en calidad alta: en WebAssembly un
+  preset lento triplica la espera para una mejora que casi no se ve.
+* Cancelar termina el worker, porque ffmpeg.wasm no sabe interrumpir un comando
+  en marcha. La interfaz lo dice antes de que el usuario se pregunte por qué la
+  siguiente conversión tarda más en arrancar.
+* Aviso de tamaño antes de empezar (512 MB) y confirmación explícita por encima
+  de 2 GB. Nunca se impide, se informa.
+
+**Comprobaciones:** 53 tests unitarios (incluidos los argumentos de ffmpeg de
+cada destino) y 15 end-to-end que convierten archivos de verdad y comprueban la
+firma binaria de lo descargado: un JPG que empieza por `FFD8FF`, un OGG que
+empieza por `OggS`, un ZIP que empieza por `PK`. Cero errores de consola.
+
+## 11. Cierre de la fase 3
+
+**Funciona, comprobado con archivos reales en Chromium:** los tres métodos de
+quitar el fondo, combinables en cualquier orden sobre la misma imagen; recortar
+con proporciones fijas, girar en cuartos de vuelta, voltear, redimensionar;
+brillo, contraste y saturación con vista previa en vivo; fondo nuevo de color o
+imagen; y exportación a PNG, WebP y JPG con control de calidad.
+
+**El motor no depende de React.** `src/core/image/editor.ts` es una clase
+corriente que posee píxeles, máscara, historial y vista previa; la interfaz se
+suscribe con `useSyncExternalStore`. Eso permite probarlo sin DOM (13 tests) y
+es lo que pedía el encargo sobre separar el motor de la interfaz.
+
+**Por qué píxeles y máscara van separados.** Los tres métodos escriben en la
+misma máscara de un byte por píxel y **nunca** tocan los píxeles originales. De
+ahí salen dos propiedades que el encargo pedía y que están cubiertas por tests:
+los métodos se acumulan en cualquier orden con el mismo resultado, y una pasada
+nunca resucita lo que otra borró (se toma el mínimo). El pincel restaurador es
+la única forma de devolver algo, que es exactamente lo que se espera.
+
+**Detalles que no son obvios:**
+
+* La distancia de color se mide en luma/croma con la croma pesando el triple.
+  En RGB puro, una sombra sobre el fondo verde está tan «lejos» como un cambio
+  de tono, y el resultado es o bien halos o bien agujeros en el sujeto. La
+  escala (100 % = 400) está elegida contra números medidos, no a ojo: un verde
+  y ese mismo verde en sombra distan unos 85; un verde y un rojo, unos 590.
+* El relleno por zona conectada usa una pila explícita con arrays tipados. La
+  recursión desborda la pila con cualquier fotografía real.
+* El historial se limita **por memoria, no por número de pasos**: una instantánea
+  de una foto de 60 Mpx ocupa 300 MB y una de un icono, 160 kB. Contar bytes deja
+  historial generoso en imágenes pequeñas sin agotar la pestaña en las grandes.
+* La máscara se reescala con interpolación bilineal propia al redimensionar: un
+  canvas no puede transportar un canal único, y el vecino más cercano deja el
+  borde del recorte en escalera.
+* La exportación dibuja exactamente lo mismo que la vista previa, en el mismo
+  orden y con el mismo filtro. Cualquier otra cosa y el archivo guardado no
+  coincidiría con lo que se vio.
+
+**Sobre el modelo de IA, sin adornos.** La tubería completa —descarga con
+progreso, caché, preprocesado, sesión ONNX, postprocesado y reescalado de la
+máscara— **está verificada de extremo a extremo en un navegador real**, con un
+modelo ONNX sintético generado por `scripts/make-test-model.py` que devuelve el
+canal rojo. Sobre la imagen de prueba (fondo verde, cuadrado rojo) el test
+comprueba que el cuadrado sobrevive y el fondo se va, leyendo el canal alfa del
+PNG exportado.
+
+Lo que **no** se ha podido comprobar aquí son los pesos reales de U²-Net: el
+entorno de desarrollo tiene bloqueado `huggingface.co` por política de red. Por
+eso el panel de IA hace dos cosas: dice el tamaño y la licencia **antes** de
+descargar nada, y si la descarga falla lo explica y ofrece cargar un `.onnx`
+del disco, que funciona sin red alguna. Queda pendiente una prueba manual de la
+calidad del recorte con los pesos reales en una red sin restricciones.
+
+**Comprobaciones:** 125 tests unitarios y 23 end-to-end. Los del editor no
+comprueban que aparezca un botón: descargan el archivo exportado, lo vuelven a
+decodificar en el navegador y leen píxeles concretos para verificar que la
+transparencia, el color de relleno del JPG y el fondo nuevo son los correctos.
+
+## 12. Cierre de la fase 4
+
+**Funciona, comprobado con archivos reales:** forma de onda con zoom y
+desplazamiento, selección arrastrando, reproducción de la selección con bucle,
+medidor de nivel con aviso de saturación, cortar/copiar/pegar/borrar/recortar,
+insertar silencio, deshacer y rehacer, catorce efectos con vista previa no
+destructiva y exportación a MP3, WAV, OGG, Opus, FLAC y M4A.
+
+**El cabezal no es la selección.** Un arrastre de cero píxeles es una posición
+del cursor, no «nada seleccionado». Confundirlos obliga a equivocarse en una de
+dos cosas: o un efecto sin selección se aplica solo al cursor, o pegar sin
+selección ignora dónde está el cursor. Son campos distintos, y hay tests para
+ambos comportamientos.
+
+**Estirado temporal propio (WSOLA).** El tono y la velocidad con tono fijo
+necesitan estirar el tiempo. Las alternativas se descartaron con motivo:
+`rubberband` no está en este build de ffmpeg (§3.2), encadenar `atempo` obligaría
+a descargar 32 MB de WebAssembly para mover un deslizador, y un solapamiento sin
+búsqueda produce el timbre metálico que todo el mundo reconoce. La búsqueda de
+alineación por correlación es lo que lo hace aceptable. Los tests lo verifican
+midiendo la frecuencia por cruces por cero: estirar al doble mantiene 440 Hz,
+subir una octava da ~880 Hz **sin** cambiar la duración.
+
+**Reparto entre código propio y el navegador.** Ganancia, normalizar, fundidos,
+invertir y silenciar se escriben directamente sobre las muestras: son pocas
+líneas y funcionan igual en un test que en el navegador. Ecualizador,
+reverberación, eco, compresor y filtros van por `OfflineAudioContext`, porque
+los nodos del navegador están bien probados y suenan exactamente igual que en
+la reproducción.
+
+**Detalles que no son obvios:**
+
+* Las colas de reverberación y eco **se mezclan sobre el audio que viene
+  después** en lugar de cortarse al final de la selección. Cortarlas deja un
+  corte audible.
+* La respuesta al impulso de la reverberación se genera (ruido con decaimiento
+  exponencial y caída de agudos) en vez de empaquetar una grabación real: un
+  impulso de verdad ocupa más de un megabyte por preset.
+* Los fundidos usan potencia constante por defecto. Un fundido lineal suena
+  como si se hundiera por la mitad, porque la sonoridad va con el cuadrado de
+  la amplitud.
+* La posición de reproducción sale del reloj de audio, no de un temporizador:
+  `setInterval` deriva respecto al hardware y el cabezal se despegaría de la onda.
+* Los picos de la onda se cachean por (ventana, ancho, revisión de muestras).
+  Una pista de diez minutos son 26 millones de muestras por canal; recalcularlas
+  al arrastrar el cabezal haría el editor inusable.
+* El historial se limita por memoria: una instantánea de diez minutos en estéreo
+  ocupa 200 MB.
+* La vista previa descarta resultados obsoletos con un testigo. Arrastrar un
+  deslizador lanza una petición por fotograma y algunos efectos tardan decenas
+  de milisegundos, así que llegan desordenadas.
+
+**Un defecto encontrado por el pantallazo, no por los tests:** el botón
+«Recortar a la selección» se desbordaba sobre el de al lado, y el sufijo de
+unidad de los deslizadores caía a una línea propia. Los tests pasaban igual.
+Ambos corregidos.
+
+**Comprobaciones:** 225 tests unitarios y 33 end-to-end. Los del audio no miran
+la interfaz: descargan el archivo exportado, lo descodifican en el navegador y
+comprueban duración, número de canales y pico. Normalizar sube de −30 dB a
+cerca de la escala completa; duplicar la velocidad con tono fijo deja el
+archivo en la mitad de duración; silenciar deja el pico por debajo de 0,001.

@@ -73,10 +73,20 @@
 
 /* ---- Slider ---- */
 .sliderRow {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  /* Flex rather than a two-column grid: the unit suffix is optional, and a
+     fixed grid pushed it onto a line of its own whenever it was present. */
+  display: flex;
   align-items: center;
   gap: var(--s-2);
+}
+
+.sliderRow .slider {
+  flex: 1;
+  min-width: 0;
+}
+
+.sliderRow .number {
+  flex: none;
 }
 
 .slider {

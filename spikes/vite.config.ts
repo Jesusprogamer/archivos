@@ -1,10 +1,10 @@
 import { defineConfig } from 'vite';
-import { ffmpegCoreAssets } from '../scripts/vite-plugin-ffmpeg-core.ts';
+import { wasmRuntimeAssets } from '../scripts/vite-plugin-wasm-runtimes.ts';
 
 export default defineConfig({
   root: import.meta.dirname,
   publicDir: '../public',
-  plugins: [ffmpegCoreAssets()],
+  plugins: [wasmRuntimeAssets()],
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',

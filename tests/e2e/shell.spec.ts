@@ -25,7 +25,7 @@ test.describe('Shell', () => {
     await expect(page.getByRole('complementary', { name: 'Biblioteca' })).toBeVisible();
     await expect(page.getByText('photo.png').first()).toBeVisible();
     // 640x480 comes from the browser decoding the file, not from the name.
-    await expect(page.getByText('640 × 480')).toBeVisible();
+    await expect(page.getByText('640×480')).toBeVisible();
     await expect(page.getByText('PNG', { exact: false }).first()).toBeVisible();
     expectNoErrors(errors);
   });
@@ -43,7 +43,7 @@ test.describe('Shell', () => {
       ),
     });
     await expect(page.getByText('trap.mp3').first()).toBeVisible();
-    await expect(page.getByText('1 × 1')).toBeVisible();
+    await expect(page.getByText('1×1')).toBeVisible();
   });
 
   test('an unsupported file is refused with an explanation', async ({ page }) => {
@@ -63,7 +63,9 @@ test.describe('Shell', () => {
 
     await expect(page.getByText('3 archivos')).toBeVisible();
     await page.getByRole('button', { name: /tone\.mp3/, exact: false }).first().click();
-    await expect(page.locator('audio')).toBeVisible();
+    // Switching to an audio file switches the workspace to the audio editor.
+    await expect(page.getByRole('button', { name: 'Audio', exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Seleccionar todo' })).toBeVisible();
     expectNoErrors(errors);
   });
 

@@ -13,10 +13,12 @@ const CORE_FILES: Record<string, string> = {
   'ffmpeg/core-mt/ffmpeg-core.js': '@ffmpeg/core-mt/dist/esm/ffmpeg-core.js',
   'ffmpeg/core-mt/ffmpeg-core.wasm': '@ffmpeg/core-mt/dist/esm/ffmpeg-core.wasm',
   'ffmpeg/core-mt/ffmpeg-core.worker.js': '@ffmpeg/core-mt/dist/esm/ffmpeg-core.worker.js',
+
 };
 
 const MIME: Record<string, string> = {
   '.js': 'text/javascript',
+  '.mjs': 'text/javascript',
   '.wasm': 'application/wasm',
 };
 
@@ -42,13 +44,17 @@ function resolveSource(spec: string): string {
  * Serves (dev) and emits (build) the ffmpeg.wasm cores straight from
  * `node_modules`.
  *
+ * ONNX Runtime is not here: its glue script is imported normally, so the
+ * bundler emits its `.wasm` once and the worker points the runtime at that
+ * exact URL.
+ *
  * Self-hosting matters twice over: a third-party CDN would undercut the
  * "nothing leaves your device" promise, and cross-origin isolation makes
  * CDN loading needlessly awkward.
  */
-export function ffmpegCoreAssets(): Plugin {
+export function wasmRuntimeAssets(): Plugin {
   return {
-    name: 'forja:ffmpeg-core-assets',
+    name: 'forja:wasm-runtime-assets',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const key = (req.url ?? '').split('?')[0]?.replace(/^\//, '') ?? '';
