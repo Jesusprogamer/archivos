@@ -44,7 +44,7 @@ export async function exportAudio(
     });
     const data = await ffmpeg.readFile(output);
     if (data.length === 0) throw new Error('ffmpeg produced an empty file');
-    return new Blob([data as BlobPart], { type: target.format.mime });
+    return new Blob([data], { type: target.format.mime });
   } finally {
     if (!context.signal?.aborted) {
       await ffmpeg.deleteFile(input);

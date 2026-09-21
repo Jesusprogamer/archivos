@@ -98,6 +98,64 @@ test.describe('Converter', () => {
     expectNoErrors(errors);
   });
 
+  /**
+   * Every audio target, run to completion.
+   *
+   * This exists because a cancelled conversion proves nothing: an earlier
+   * version of the WebM path shipped a codec combination that traps ffmpeg,
+   * and the only test covering it cancelled before the encoder ever ran.
+   */
+  test('every audio output format produces a file that decodes', async ({ page }) => {
+    const { errors } = watchForErrors(page);
+    await page.goto('/');
+    await openFiles(page, ['tone.wav']);
+    await page.getByRole('button', { name: 'Convertir', exact: true }).first().click();
+
+    for (const [label, extension] of [
+      ['MP3', 'mp3'],
+      ['OGG', 'ogg'],
+      ['FLAC', 'flac'],
+      ['M4A', 'm4a'],
+      ['WAV', 'wav'],
+    ] as const) {
+      await page.getByRole('button', { name: new RegExp(`^${label}`) }).click();
+      const download = page.waitForEvent('download');
+      await page.getByRole('button', { name: 'Convertir', exact: true }).last().click();
+      await expect(page.getByText('Listo').first()).toBeVisible({ timeout: 150_000 });
+      await page.getByRole('button', { name: 'Descargar' }).first().click();
+
+      const file = await download;
+      expect(file.suggestedFilename(), `${label} output name`).toBe(`tone.${extension}`);
+      const { size } = await (await import('node:fs/promises')).stat(await file.path());
+      expect(size, `${label} output size`).toBeGreaterThan(1000);
+
+      // Clear the queue so the next format starts from a clean slate.
+      await page.getByRole('button', { name: 'Limpiar terminados' }).click();
+    }
+    expectNoErrors(errors);
+  });
+
+  test('a WebM conversion runs to completion and the result plays', async ({ page }) => {
+    const { errors } = watchForErrors(page);
+    await page.goto('/');
+    await openFiles(page, ['clip.webm']);
+    await page.getByRole('button', { name: 'Convertir', exact: true }).first().click();
+    await page.getByRole('button', { name: /^WebM/ }).click();
+    await page.getByLabel('Resolución').selectOption('360');
+
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Convertir', exact: true }).last().click();
+    await expect(page.getByText('Listo')).toBeVisible({ timeout: 240_000 });
+    await page.getByRole('button', { name: 'Descargar' }).click();
+
+    const file = await download;
+    expect(file.suggestedFilename()).toBe('clip.webm');
+    const bytes = await magicBytes(await file.path(), 4);
+    // EBML magic: a real Matroska/WebM file, not a truncated stub.
+    expect([...bytes.subarray(0, 4)]).toEqual([0x1a, 0x45, 0xdf, 0xa3]);
+    expectNoErrors(errors);
+  });
+
   test('a running conversion can be cancelled', async ({ page }) => {
     await page.goto('/');
     await openFiles(page, ['clip.mp4']);

@@ -28,10 +28,23 @@ export interface Target {
 }
 
 /** CRF values per quality level, tuned per codec rather than shared blindly. */
-const CRF: Record<'x264' | 'x265' | 'vp9', Record<QualityLevel, number>> = {
+const CRF: Record<'x264' | 'x265' | 'vp8', Record<QualityLevel, number>> = {
   x264: { high: 18, balanced: 23, small: 28 },
   x265: { high: 22, balanced: 28, small: 33 },
-  vp9: { high: 26, balanced: 33, small: 40 },
+  vp8: { high: 10, balanced: 20, small: 32 },
+};
+
+/**
+ * VP8 needs a bit-rate ceiling alongside its CRF.
+ *
+ * Unlike x264, libvpx treats CRF as a quality target within a bit-rate budget;
+ * with `-b:v 0` it produces the constrained-quality mode, which this build
+ * handles but which makes file sizes wildly unpredictable on detailed footage.
+ */
+const BITRATE: Record<QualityLevel, string> = {
+  high: '4M',
+  balanced: '2M',
+  small: '1M',
 };
 
 /**
@@ -67,7 +80,7 @@ function scaleFilter(height: number | 'source'): string | undefined {
 
 function videoArgs(
   options: ConversionOptions,
-  codec: 'x264' | 'x265' | 'vp9',
+  codec: 'x264' | 'x265' | 'vp8',
   audioCodec: string,
 ): string[] {
   const { video } = options;
@@ -76,13 +89,18 @@ function videoArgs(
   if (filters.length > 0) args.push('-vf', filters.join(','));
   if (video.fps !== 'source') args.push('-r', String(video.fps));
 
-  if (codec === 'vp9') {
+  if (codec === 'vp8') {
     args.push(
-      '-c:v', 'libvpx-vp9',
-      '-crf', String(CRF.vp9[video.quality]),
-      '-b:v', '0',
-      // `row-mt` and a high `cpu-used` are what make VP9 bearable in wasm.
-      '-row-mt', '1',
+      // VP8, not VP9, and not by preference.
+      //
+      // `libvpx-vp9` is present in this core's encoder list but traps with
+      // "memory access out of bounds" after the first frame, in every
+      // configuration tried: with and without `-row-mt`, both deadlines,
+      // `-threads 1`, and constant-bitrate mode (PLAN.md §3.6). VP8 encodes the
+      // same clip cleanly, and four times faster with a realtime deadline.
+      '-c:v', 'libvpx',
+      '-crf', String(CRF.vp8[video.quality]),
+      '-b:v', String(BITRATE[video.quality]),
       '-deadline', video.quality === 'high' ? 'good' : 'realtime',
       '-cpu-used', video.quality === 'high' ? '2' : '5',
     );
@@ -96,10 +114,22 @@ function videoArgs(
     if (codec === 'x265') args.push('-tag:v', 'hvc1');
   }
 
+  // See the note on the WebM target: the audio codec is chosen by what this
+  // build can actually mux, not by what compresses best.
   args.push(...audioArgs(video.audio, audioCodec));
   return args;
 }
 
+/**
+ * Audio outputs.
+ *
+ * Opus is **not** here, and its absence is measured rather than an oversight:
+ * `libopus` is compiled into this core and encodes mono happily, but traps with
+ * "memory access out of bounds" on any stereo input, at every sample rate and
+ * bit-rate mode tried (PLAN.md §3.6). Offering a format that silently downmixes
+ * to mono, or that fails on most real files, would be worse than not offering
+ * it. Forja can still *read* Opus; it just cannot write it.
+ */
 const AUDIO_TARGETS: readonly Target[] = [
   {
     id: 'mp3',
@@ -124,14 +154,6 @@ const AUDIO_TARGETS: readonly Target[] = [
     extension: 'ogg',
     engine: 'ffmpeg',
     args: (o, i, out) => ['-i', i, '-vn', ...audioArgs(o.audio, 'libvorbis'), out],
-  },
-  {
-    id: 'opus',
-    format: FORMATS.opus,
-    outputKind: 'audio',
-    extension: 'opus',
-    engine: 'ffmpeg',
-    args: (o, i, out) => ['-i', i, '-vn', ...audioArgs(o.audio, 'libopus'), out],
   },
   {
     id: 'flac',
@@ -174,7 +196,7 @@ const VIDEO_TARGETS: readonly Target[] = [
     outputKind: 'video',
     extension: 'webm',
     engine: 'ffmpeg',
-    args: (o, i, out) => ['-i', i, ...videoArgs(o, 'vp9', 'libopus'), out],
+    args: (o, i, out) => ['-i', i, ...videoArgs(o, 'vp8', 'libvorbis'), out],
   },
   {
     id: 'mkv',

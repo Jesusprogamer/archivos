@@ -22,7 +22,7 @@ function valueOf(args: string[], flag: string): string | undefined {
 describe('targetsFor', () => {
   it('offers only audio outputs for an audio file', () => {
     const ids = targetsFor(FORMATS.mp3).map((target) => target.id);
-    expect(ids).toEqual(['mp3', 'wav', 'ogg', 'opus', 'flac', 'm4a']);
+    expect(ids).toEqual(['mp3', 'wav', 'ogg', 'flac', 'm4a']);
   });
 
   it('offers video, GIF and audio extraction for a video file', () => {
@@ -33,6 +33,13 @@ describe('targetsFor', () => {
     expect(ids).toContain('mp3');
     // AV1 is absent from this ffmpeg build, so it must never be offered.
     expect(ids).not.toContain('av1');
+  });
+
+  it('never offers Opus, which traps this build on stereo input', () => {
+    // Measured, not assumed (PLAN.md §3.6). Reading Opus still works.
+    for (const format of [FORMATS.mp3, FORMATS.mp4, FORMATS.wav]) {
+      expect(targetsFor(format).map((target) => target.id)).not.toContain('opus');
+    }
   });
 
   it('hides canvas formats the browser cannot encode', () => {
@@ -106,12 +113,23 @@ describe('video arguments', () => {
     expect(valueOf(argsFor('mp4-h265'), '-tag:v')).toBe('hvc1');
   });
 
-  it('uses VP9 with Opus for WebM, with the settings that make wasm bearable', () => {
+  it('uses VP8 with Vorbis for WebM', () => {
     const args = argsFor('webm');
-    expect(valueOf(args, '-c:v')).toBe('libvpx-vp9');
-    expect(valueOf(args, '-c:a')).toBe('libopus');
-    expect(valueOf(args, '-b:v')).toBe('0');
-    expect(valueOf(args, '-row-mt')).toBe('1');
+    expect(valueOf(args, '-c:v')).toBe('libvpx');
+    // Not Opus: it traps the Matroska muxer in this build (PLAN.md §3.6).
+    expect(valueOf(args, '-c:a')).toBe('libvorbis');
+    expect(valueOf(args, '-cpu-used')).toBe('5');
+  });
+
+  it('never asks for VP9, which crashes this build of libvpx', () => {
+    // Measured, not assumed: libvpx-vp9 is in the encoder list but traps with
+    // "memory access out of bounds" after the first frame in every
+    // configuration (PLAN.md §3.6). This guards against it being helpfully
+    // reinstated by someone reading the usual advice.
+    for (const id of ['webm']) {
+      expect(argsFor(id)).not.toContain('libvpx-vp9');
+      expect(argsFor(id)).not.toContain('-row-mt');
+    }
   });
 
   it('only sets the frame rate when it is not "source"', () => {

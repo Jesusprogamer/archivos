@@ -4,6 +4,7 @@ import type { WorkspaceId } from '../core/registry/workspaces';
 import { AudioWorkspace } from '../workspaces/audio/AudioWorkspace';
 import { ConvertWorkspace } from '../workspaces/convert/ConvertWorkspace';
 import { ImageWorkspace } from '../workspaces/image/ImageWorkspace';
+import { VideoWorkspace } from '../workspaces/video/VideoWorkspace';
 
 export interface WorkspaceViewProps {
   item: MediaItem;
@@ -20,4 +21,5 @@ export const WORKSPACE_VIEWS: Partial<Record<WorkspaceId, ComponentType<Workspac
   convert: ConvertWorkspace,
   image: ImageWorkspace,
   audio: AudioWorkspace,
+  video: VideoWorkspace,
 };

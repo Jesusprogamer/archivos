@@ -32,11 +32,11 @@
   },
   "include": [
     "src",
-    "spikes/spike.ts",
-    "spikes/spike2.ts"
+    "spikes/*.ts"
   ],
   "exclude": [
     "src/**/*.test.ts",
-    "src/**/*.test.tsx"
+    "src/**/*.test.tsx",
+    "spikes/vite.config.ts"
   ]
 }

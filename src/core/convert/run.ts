@@ -72,7 +72,7 @@ async function runWithFfmpeg(
     const data = await ffmpeg.readFile(output);
     if (data.length === 0) throw new Error('ffmpeg produced an empty file');
     return {
-      blob: new Blob([data as BlobPart], { type: target.format.mime }),
+      blob: new Blob([data], { type: target.format.mime }),
       fileName: outputFileName(item, target),
     };
   } finally {
