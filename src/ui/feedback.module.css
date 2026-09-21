@@ -166,6 +166,21 @@
   overflow-wrap: anywhere;
 }
 
+/* The one thing to do about a toast, e.g. applying a downloaded update. */
+.toastAction {
+  margin-top: var(--s-2);
+  padding: 3px var(--s-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-raised);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.toastAction:hover {
+  border-color: var(--border-strong);
+}
+
 /* ---- Inline notice ---- */
 .notice {
   display: flex;

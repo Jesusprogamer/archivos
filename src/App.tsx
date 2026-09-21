@@ -9,6 +9,10 @@ import { Home } from './app/Home';
 import { Settings } from './app/Settings';
 import { Studio } from './app/Studio';
 import { useFileDrop } from './app/useFileDrop';
+import { InstallButton } from './pwa/InstallButton';
+import { applyUpdate, usePwa } from './pwa/install';
+import { startLaunchQueue } from './pwa/launch';
+import { useToasts } from './ui/toast';
 
 export function App() {
   const t = useT();
@@ -23,6 +27,27 @@ export function App() {
 
   const onFiles = useCallback((files: File[]) => void addFiles(files), [addFiles]);
   const { dragging } = useFileDrop(onFiles);
+
+  // Archivos abiertos desde el sistema operativo, cuando Forja está instalada.
+  useEffect(() => {
+    startLaunchQueue(onFiles);
+  }, [onFiles]);
+
+  // Una versión nueva ya descargada. No se aplica sola: hacerlo cambiaría los
+  // ficheros bajo una sesión con trabajo a medias.
+  const updateReady = usePwa((state) => state.updateReady);
+  useEffect(() => {
+    if (!updateReady) return;
+    // Se queda hasta que se cierre: perder un aviso de actualización a los
+    // cinco segundos es perderlo del todo.
+    useToasts.getState().push({
+      tone: 'info',
+      title: t('pwa.updateReady'),
+      text: t('pwa.updateReadyText'),
+      duration: 0,
+      action: { label: t('pwa.update'), onClick: applyUpdate },
+    });
+  }, [updateReady, t]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -43,7 +68,8 @@ export function App() {
   }, []);
 
   const actions = (
-    <span style={{ display: 'flex', gap: 'var(--s-1)' }}>
+    <span style={{ display: 'flex', gap: 'var(--s-1)', alignItems: 'center' }}>
+      <InstallButton />
       <Button variant="ghost" size="sm" iconOnly aria-label={t('common.help')} onClick={() => setHelpOpen(true)}>
         <HelpCircle size={16} aria-hidden="true" />
       </Button>

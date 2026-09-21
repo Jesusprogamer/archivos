@@ -96,6 +96,52 @@ dentro de la propia aplicación.
 
 ---
 
+## Instalarla como aplicación
+
+Forja se instala como una aplicación normal: icono propio, ventana sin barra de
+direcciones y arranque **sin necesidad de internet**. No es un atajo al
+navegador; el armazón de la aplicación queda guardado en el dispositivo.
+
+| Dónde                                            | Cómo                                                                                                                                                      |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Chrome / Edge** (Windows, Mac, Linux, Android) | Botón **Instalar** en la barra superior de Forja, o el icono de instalar en la barra de direcciones                                                       |
+| **iPhone / iPad**                                | Botón **Compartir** → **Añadir a pantalla de inicio**. Safari no ofrece un botón dentro de la página, así que Forja enseña estas instrucciones en Ajustes |
+| **Firefox de escritorio**                        | No instala aplicaciones web. Funciona igual en pestaña                                                                                                    |
+
+El botón de instalar **solo aparece cuando el navegador puede instalar de
+verdad**. Si no lo ves, Ajustes → Aplicación dice por qué.
+
+### Qué se guarda y qué no
+
+Instalarla ocupa **alrededor de 1 MB**. Los conversores pesados no se descargan
+por adelantado, porque la mayoría de las sesiones no los tocan:
+
+|                                    | Cuándo se descarga                             | Tamaño        |
+| ---------------------------------- | ---------------------------------------------- | ------------- |
+| Interfaz, estilos, fuentes, iconos | Al instalar                                    | ~1 MB         |
+| ffmpeg.wasm                        | La primera vez que conviertes o exportas vídeo | 63 MB         |
+| Modelo de recorte de fondo         | La primera vez que quitas un fondo con IA      | 14 MB + pesos |
+
+Una vez descargados, quedan guardados y no se vuelven a pedir. Eso significa
+que **sin conexión puedes usar todo lo que ya hayas usado alguna vez**.
+
+### Actualizaciones
+
+Cuando hay una versión nueva, aparece un aviso con un botón **Actualizar**.
+Nunca se aplica sola: cambiar los ficheros por debajo de una sesión con trabajo
+a medias es una forma segura de perderlo.
+
+Si algo se queda atascado, **Ajustes → Aplicación** y la pantalla de error
+tienen un botón que borra cachés, service worker y datos locales.
+
+### Abrir archivos desde el sistema
+
+Instalada en Chrome o Edge de escritorio, Forja aparece en **«Abrir con»** para
+imágenes, audio y vídeo. El resto de navegadores ignoran esa parte del
+manifiesto.
+
+---
+
 ## Si la página sale en negro y no aparece nada
 
 Es el síntoma de que el JavaScript no ha llegado a ejecutarse. Desde la versión

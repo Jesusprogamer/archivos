@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { wasmRuntimeAssets } from './scripts/vite-plugin-wasm-runtimes.ts';
+import { pwa } from './scripts/vite-plugin-pwa.ts';
 
 /**
  * Cross-origin isolation headers.
@@ -17,7 +18,7 @@ const crossOriginIsolation = {
 };
 
 export default defineConfig({
-  plugins: [react(), wasmRuntimeAssets()],
+  plugins: [react(), wasmRuntimeAssets(), pwa()],
   server: { headers: crossOriginIsolation },
   preview: { headers: crossOriginIsolation },
   worker: { format: 'es' },

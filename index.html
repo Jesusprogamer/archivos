@@ -10,6 +10,24 @@
       content="Convierte y edita imagen, audio y vídeo sin subir nada a ningún servidor. Todo ocurre en tu dispositivo."
     />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="manifest.webmanifest" />
+
+    <!--
+      El color de la barra del sistema cuando se abre instalada. Se declaran los
+      dos temas para que la ventana no aparezca con un marco blanco sobre la
+      interfaz oscura, ni al revés.
+    -->
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0c0f" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#eef1f5" />
+
+    <!--
+      Safari en iOS no lee el manifiesto: para «Añadir a pantalla de inicio»
+      necesita sus propias etiquetas y su propio icono.
+    -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Forja" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <style>
       /*
         Last-resort fallback, inline on purpose: if the bundle never runs

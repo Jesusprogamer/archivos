@@ -544,6 +544,31 @@ export const en: Dictionary = {
   'vis.exportDone': 'Visualiser exported',
   'vis.decodeFailed': 'This audio could not be decoded',
 
+  'pwa.section': 'App',
+  'pwa.install': 'Install app',
+  'pwa.installShort': 'Install',
+  'pwa.status': 'Status',
+  'pwa.statusInstalled': 'Installed',
+  'pwa.statusPrompt': 'Ready to install',
+  'pwa.statusManual': 'Installs by hand',
+  'pwa.statusUnavailable': 'This browser does not install web apps',
+  'pwa.offline': 'Offline',
+  'pwa.offlineReady': 'Stored: opens without internet',
+  'pwa.offlinePending': 'Not stored yet',
+  'pwa.promptHelp':
+    'It installs like any other app: its own icon, a window with no address bar, and it starts without internet. It takes almost no space and uninstalls like anything else.',
+  'pwa.installedHelp':
+    'You are already using it as an app. The video converters download the first time you use them and stay stored for the next.',
+  'pwa.manualHelp':
+    'On iPhone and iPad it installs by hand: tap the Share button, then "Add to Home Screen".',
+  'pwa.unavailableHelp':
+    'Desktop Firefox and Safari do not install web apps. Chrome and Edge do, and so does Android.',
+  'pwa.installedToast': 'Forja installed',
+  'pwa.installedToastText': 'You can now open it from your desktop or home screen.',
+  'pwa.updateReady': 'A new version is available',
+  'pwa.updateReadyText': 'It applies on reload. Unsaved work will be lost.',
+  'pwa.update': 'Update',
+
   'error.readFailed': 'Could not read “{name}”',
   'error.decodeFailed': 'Could not decode “{name}”. It may be damaged.',
   'error.generic': 'Something went wrong',

@@ -547,6 +547,31 @@ export const es = {
   'vis.exportDone': 'Visualizador exportado',
   'vis.decodeFailed': 'No se ha podido descodificar este audio',
 
+  'pwa.section': 'Aplicación',
+  'pwa.install': 'Instalar aplicación',
+  'pwa.installShort': 'Instalar',
+  'pwa.status': 'Estado',
+  'pwa.statusInstalled': 'Instalada',
+  'pwa.statusPrompt': 'Lista para instalar',
+  'pwa.statusManual': 'Se instala a mano',
+  'pwa.statusUnavailable': 'Este navegador no instala aplicaciones web',
+  'pwa.offline': 'Sin conexión',
+  'pwa.offlineReady': 'Guardada: abre sin internet',
+  'pwa.offlinePending': 'Todavía no guardada',
+  'pwa.promptHelp':
+    'Se instala como una aplicación más: icono propio, ventana sin barra de direcciones y arranque sin internet. No ocupa casi nada y se desinstala como cualquier otra.',
+  'pwa.installedHelp':
+    'Ya la estás usando como aplicación. Los conversores de vídeo se descargan la primera vez que los usas y quedan guardados para la siguiente.',
+  'pwa.manualHelp':
+    'En iPhone y iPad se instala a mano: pulsa el botón Compartir y luego «Añadir a pantalla de inicio».',
+  'pwa.unavailableHelp':
+    'Firefox y Safari de escritorio no instalan aplicaciones web. En Chrome o Edge sí, y también desde Android.',
+  'pwa.installedToast': 'Forja instalada',
+  'pwa.installedToastText': 'Ya puedes abrirla desde tu escritorio o pantalla de inicio.',
+  'pwa.updateReady': 'Hay una versión nueva',
+  'pwa.updateReadyText': 'Se aplica al recargar. Tu trabajo sin guardar se perderá.',
+  'pwa.update': 'Actualizar',
+
   'error.readFailed': 'No se ha podido leer «{name}»',
   'error.decodeFailed': 'No se ha podido descodificar «{name}». Puede estar dañado.',
   'error.generic': 'Algo ha fallado',

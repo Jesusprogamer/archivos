@@ -3,10 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { ErrorBoundary } from './app/ErrorBoundary';
 import { startTheme } from './app/theme';
+import { startPwa } from './pwa/install';
 import { useLocaleStore } from './i18n';
 import './styles/base.css';
 
 startTheme();
+startPwa();
 document.documentElement.lang = useLocaleStore.getState().locale;
 
 const container = document.getElementById('root');
