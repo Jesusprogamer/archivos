@@ -131,6 +131,50 @@ Forja **comprueba** lo que el navegador sabe hacer antes de ofrecerlo. Si AVIF
 no se puede codificar, la opción no está. Nunca aparece un botón que no
 funcione.
 
+Lo mismo se aplicó al propio ffmpeg.wasm: tres codificadores que figuran en su
+lista resultaron estar rotos al ejecutarlos (VP9, Opus en estéreo y el filtro
+`drawtext` sin fuente). Se midieron uno a uno y se retiraron o se sustituyeron.
+Está todo en [`PLAN.md`](PLAN.md) §3.
+
+### Accesibilidad
+
+Auditada con **axe-core contra la interfaz real**, no a ojo: hay un test
+end-to-end por pantalla que falla si aparece cualquier violación de WCAG 2.1 AA
+de gravedad seria o crítica, más uno que recorre la interfaz con el tabulador y
+falla si el foco cae en un control invisible.
+
+Esa auditoría encontró que el color de texto atenuado daba 4,00:1 en el tema
+oscuro y 4,47:1 en el claro, ambos por debajo del umbral. Los tokens se
+recalcularon contra el fondo más desfavorable de cada tema.
+
+---
+
+## Rendimiento, medido
+
+Con los archivos que el encargo fija como criterio de aceptación, en Chromium:
+
+| Archivo | Operación | Tiempo | Memoria |
+| --- | --- | --- | --- |
+| PNG de 8,3 Mpx (3840×2160) | abrir en el editor | 1,0 s | 195 MB |
+| | quitar el fondo por color | 0,7 s | |
+| | exportar a PNG | 0,5 s | |
+| MP3 de 10 minutos | abrir en el editor de audio | 3,8 s | 569 MB |
+| | normalizar y aplicar | 0,8 s | |
+| | redibujar la onda con zoom | 0,6 s | |
+| Vídeo 1080p de 2 minutos | abrir en el editor de vídeo | 0,4 s | 572 MB |
+| | dividir en el cabezal | 0,2 s | |
+
+Cero errores de consola en todas ellas.
+
+La memoria del audio es alta a propósito y es predecible: diez minutos en
+estéreo a 44,1 kHz en coma flotante son 211 MB por copia, y el editor guarda la
+versión aplicada más el historial. El historial se limita **por bytes**, no por
+número de pasos, justamente para que esto no crezca sin control.
+
+El paquete inicial son **312 kB** (98 kB comprimido). Cada editor es un trozo
+aparte que se descarga solo cuando se abre, y ffmpeg.wasm (32 MB) y el modelo de
+IA solo cuando se usan.
+
 ---
 
 ## Desarrollo
@@ -162,7 +206,11 @@ npx playwright install chromium && npm run e2e
 ```
 
 Los archivos de prueba se generan con `npm run fixtures` y **no** están en el
-repositorio (son binarios reproducibles).
+repositorio: son binarios reproducibles. Lo que sí está son las **cabeceras**
+—los primeros cuatro kilobytes de cada uno, que es justo lo que lee el detector
+de formatos—, para que `npm test` funcione recién clonado sin necesidad de
+ffmpeg. Los tests end-to-end sí necesitan los archivos completos, y te lo dicen
+con ese mismo comando si faltan.
 
 ---
 

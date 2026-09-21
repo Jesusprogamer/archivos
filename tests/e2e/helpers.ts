@@ -1,10 +1,20 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { expect, type Page } from '@playwright/test';
 
 export const FIXTURES = path.resolve(import.meta.dirname, '../fixtures');
 
 export function fixture(name: string): string {
-  return path.join(FIXTURES, name);
+  const file = path.join(FIXTURES, name);
+  if (!existsSync(file)) {
+    throw new Error(
+      `Missing test media: ${name}\n` +
+        'The end-to-end suite works on real files, which are generated rather ' +
+        'than committed. Run:\n\n  npm run fixtures\n\n' +
+        '(it needs a full ffmpeg on PATH, or FFMPEG pointing at one)',
+    );
+  }
+  return file;
 }
 
 /**

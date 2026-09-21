@@ -37,6 +37,20 @@ export const AUDIO_SHORTCUTS: ShortcutGroup = {
   ],
 };
 
+/** Only listed while the video editor is open, because that is where they work. */
+export const VIDEO_SHORTCUTS: ShortcutGroup = {
+  titleKey: 'workspace.video',
+  shortcuts: [
+    { keys: ['Space'], labelKey: 'audio.play' },
+    { keys: ['S'], labelKey: 'video.split' },
+    { keys: ['Mod', 'D'], labelKey: 'video.duplicate' },
+    { keys: ['Supr'], labelKey: 'video.delete' },
+    { keys: ['Mod', 'Z'], labelKey: 'common.undo' },
+  ],
+};
+
 export function shortcutGroups(workspace?: string): readonly ShortcutGroup[] {
-  return workspace === 'audio' ? [GLOBAL_SHORTCUTS, AUDIO_SHORTCUTS] : [GLOBAL_SHORTCUTS];
+  if (workspace === 'audio') return [GLOBAL_SHORTCUTS, AUDIO_SHORTCUTS];
+  if (workspace === 'video') return [GLOBAL_SHORTCUTS, VIDEO_SHORTCUTS];
+  return [GLOBAL_SHORTCUTS];
 }
