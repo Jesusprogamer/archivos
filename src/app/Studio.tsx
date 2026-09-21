@@ -85,11 +85,23 @@ export function Studio({
         </span>
 
         <span className={styles.topActions}>
-          <Button variant="ghost" size="sm" iconOnly aria-label={t('library.add')} onClick={() => fileInput?.click()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label={t('library.add')}
+            onClick={() => fileInput?.click()}
+          >
             <UploadCloud size={15} aria-hidden="true" />
           </Button>
           <InstallButton iconOnly />
-          <Button variant="ghost" size="sm" iconOnly aria-label={t('common.help')} onClick={onOpenHelp}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label={t('common.help')}
+            onClick={onOpenHelp}
+          >
             <HelpCircle size={15} aria-hidden="true" />
           </Button>
           <Button
@@ -106,7 +118,8 @@ export function Studio({
           ref={setFileInput}
           type="file"
           multiple
-          className="sr-only"
+          className="file-trigger"
+          tabIndex={-1}
           aria-label={t('a11y.fileInput')}
           onChange={(event) => {
             onFiles([...(event.target.files ?? [])]);

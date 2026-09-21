@@ -132,19 +132,57 @@ export function SceneControls({
           onChange={(gradientAcross) => visual({ gradientAcross })}
         />
         {slider(t('vis.bars'), scene.visual.bars, 8, 160, 1, (bars) => visual({ bars }))}
-        {slider(t('vis.thickness'), scene.visual.thickness, 1, 40, 1, (thickness) => visual({ thickness }), 'px')}
-        {slider(t('vis.visualHeight'), scene.visual.height, 0.1, 0.9, 0.01, (height) => visual({ height }))}
-        {slider(t('vis.sensitivity'), scene.visual.sensitivity, 0.2, 4, 0.05, (sensitivity) => visual({ sensitivity }), '×')}
-        {slider(t('vis.smoothing'), scene.visual.smoothing, 0, 0.95, 0.05, (smoothing) => visual({ smoothing }))}
+        {slider(
+          t('vis.thickness'),
+          scene.visual.thickness,
+          1,
+          40,
+          1,
+          (thickness) => visual({ thickness }),
+          'px',
+        )}
+        {slider(t('vis.visualHeight'), scene.visual.height, 0.1, 0.9, 0.01, (height) =>
+          visual({ height }),
+        )}
+        {slider(
+          t('vis.sensitivity'),
+          scene.visual.sensitivity,
+          0.2,
+          4,
+          0.05,
+          (sensitivity) => visual({ sensitivity }),
+          '×',
+        )}
+        {slider(t('vis.smoothing'), scene.visual.smoothing, 0, 0.95, 0.05, (smoothing) =>
+          visual({ smoothing }),
+        )}
         {slider(t('vis.glow'), scene.visual.glow, 0, 1, 0.05, (glow) => visual({ glow }))}
-        {slider(t('vis.bassReaction'), scene.visual.bassReaction, 0, 1, 0.05, (bassReaction) => visual({ bassReaction }))}
+        {slider(t('vis.bassReaction'), scene.visual.bassReaction, 0, 1, 0.05, (bassReaction) =>
+          visual({ bassReaction }),
+        )}
         <Switch
           label={t('vis.symmetry')}
           checked={scene.visual.symmetry}
           onChange={(symmetry) => visual({ symmetry })}
         />
-        {slider(t('vis.minFrequency'), scene.visual.minFrequency, 20, 500, 5, (minFrequency) => visual({ minFrequency }), 'Hz')}
-        {slider(t('vis.maxFrequency'), scene.visual.maxFrequency, 2000, 20000, 100, (maxFrequency) => visual({ maxFrequency }), 'Hz')}
+        {slider(
+          t('vis.minFrequency'),
+          scene.visual.minFrequency,
+          20,
+          500,
+          5,
+          (minFrequency) => visual({ minFrequency }),
+          'Hz',
+        )}
+        {slider(
+          t('vis.maxFrequency'),
+          scene.visual.maxFrequency,
+          2000,
+          20000,
+          100,
+          (maxFrequency) => visual({ maxFrequency }),
+          'Hz',
+        )}
       </section>
 
       <section className={styles.group}>
@@ -190,19 +228,30 @@ export function SceneControls({
           ) : null}
         </div>
         {scene.background.kind === 'gradient'
-          ? slider(t('vis.background.angle'), scene.background.gradientAngle, 0, 360, 5, (gradientAngle) => background({ gradientAngle }), '°')
+          ? slider(
+              t('vis.background.angle'),
+              scene.background.gradientAngle,
+              0,
+              360,
+              5,
+              (gradientAngle) => background({ gradientAngle }),
+              '°',
+            )
           : null}
         {scene.background.kind === 'image' ? (
           <Button variant="secondary" block onClick={() => backgroundInput.current?.click()}>
             {scene.background.imageName || t('vis.background.chooseImage')}
           </Button>
         ) : null}
-        {slider(t('vis.background.dim'), scene.background.dim, 0, 0.9, 0.05, (dim) => background({ dim }))}
+        {slider(t('vis.background.dim'), scene.background.dim, 0, 0.9, 0.05, (dim) =>
+          background({ dim }),
+        )}
         <input
           ref={backgroundInput}
           type="file"
           accept="image/*"
-          className="sr-only"
+          className="file-trigger"
+          tabIndex={-1}
           aria-label={t('vis.background.chooseImage')}
           onChange={(event) => {
             const file = event.target.files?.[0];
@@ -275,7 +324,9 @@ export function SceneControls({
                 />
               )}
             </Field>
-            {slider(t('video.text.size'), scene.text.size, 0.02, 0.2, 0.005, (size) => text({ size }))}
+            {slider(t('video.text.size'), scene.text.size, 0.02, 0.2, 0.005, (size) =>
+              text({ size }),
+            )}
           </>
         ) : null}
       </section>
@@ -312,14 +363,17 @@ export function SceneControls({
               )}
             </Field>
             {slider(t('vis.logo.size'), scene.logo.size, 0.04, 0.5, 0.01, (size) => logo({ size }))}
-            {slider(t('vis.logo.opacity'), scene.logo.opacity, 0.1, 1, 0.05, (opacity) => logo({ opacity }))}
+            {slider(t('vis.logo.opacity'), scene.logo.opacity, 0.1, 1, 0.05, (opacity) =>
+              logo({ opacity }),
+            )}
           </>
         ) : null}
         <input
           ref={logoInput}
           type="file"
           accept="image/*"
-          className="sr-only"
+          className="file-trigger"
+          tabIndex={-1}
           aria-label={t('vis.logo.choose')}
           onChange={(event) => {
             const file = event.target.files?.[0];

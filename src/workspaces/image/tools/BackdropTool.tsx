@@ -77,7 +77,8 @@ export function BackdropTool({ backdrop, onChange }: BackdropToolProps) {
         ref={fileInput}
         type="file"
         accept="image/*"
-        className="sr-only"
+        className="file-trigger"
+        tabIndex={-1}
         aria-label={t('image.backdrop.choose')}
         onChange={(event) => {
           const file = event.target.files?.[0];

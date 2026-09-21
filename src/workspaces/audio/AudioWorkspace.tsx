@@ -20,7 +20,11 @@ import { durationOf, toDecibels, type AudioData } from '../../core/audio/buffer'
 import { DEFAULT_SETTINGS, type EffectId, type EffectSettings } from '../../core/audio/effects';
 import { EXPORT_TARGETS, exportAudio } from '../../core/audio/exportAudio';
 import { decodeAudio } from '../../core/audio/render';
-import { DEFAULT_OPTIONS, AUDIO_BITRATES, type ConversionOptions } from '../../core/convert/options';
+import {
+  DEFAULT_OPTIONS,
+  AUDIO_BITRATES,
+  type ConversionOptions,
+} from '../../core/convert/options';
 import { downloadBlob } from '../../core/convert/zip';
 import type { MediaItem } from '../../core/media/types';
 import { baseName, formatBytes, formatTimecode, safeFileName } from '../../core/util/format';
@@ -127,7 +131,26 @@ function Editor({ item, audio }: { item: MediaItem; audio: AudioData }) {
   const selection = editor.getSelection();
   const position = player.playing ? player.position : editor.getPlayhead();
   const level = player.level;
-  const target = EXPORT_TARGETS.find((candidate) => candidate.id === targetId) ?? EXPORT_TARGETS[0]!;
+
+  /**
+   * Mantiene el cabezal a la vista mientras suena.
+   *
+   * Sin zoom se ve la onda entera y esto no hace nada. Con zoom, el cabezal se
+   * salía por la derecha a los pocos segundos y ya no se veía por dónde iba.
+   * La ventana avanza de golpe, conservando el zoom, en lugar de desplazarse
+   * continuamente: con la onda dibujada en un canvas, un desplazamiento suave
+   * obligaría a recalcular los picos en cada fotograma.
+   *
+   * Ajuste durante el render, no en un efecto: React vuelve a renderizar antes
+   * de pintar, así que la onda nunca llega a dibujarse con la ventana vieja.
+   */
+  if (player.playing && (position < view.start || position > view.end)) {
+    const span = view.end - view.start;
+    const start = Math.max(0, Math.min(Math.max(0, duration - span), position - span * 0.1));
+    setView({ start, end: start + span });
+  }
+  const target =
+    EXPORT_TARGETS.find((candidate) => candidate.id === targetId) ?? EXPORT_TARGETS[0]!;
 
   // The preview is recomputed whenever its parameters change, so the waveform
   // and playback always show the effect exactly as it would be applied. The
@@ -174,7 +197,10 @@ function Editor({ item, audio }: { item: MediaItem; audio: AudioData }) {
       } else if (mod && event.key.toLowerCase() === 'z' && !event.shiftKey) {
         event.preventDefault();
         editor.undo();
-      } else if (mod && (event.key.toLowerCase() === 'y' || (event.key.toLowerCase() === 'z' && event.shiftKey))) {
+      } else if (
+        mod &&
+        (event.key.toLowerCase() === 'y' || (event.key.toLowerCase() === 'z' && event.shiftKey))
+      ) {
         event.preventDefault();
         editor.redo();
       } else if (mod && event.key.toLowerCase() === 'a') {
@@ -225,8 +251,18 @@ function Editor({ item, audio }: { item: MediaItem; audio: AudioData }) {
           <Button variant="ghost" size="sm" iconOnly aria-label={t('audio.toStart')} onClick={stop}>
             <SkipBack size={15} aria-hidden="true" />
           </Button>
-          <Button variant="primary" size="sm" iconOnly aria-label={player.playing ? t('audio.pause') : t('audio.play')} onClick={play}>
-            {player.playing ? <Pause size={15} aria-hidden="true" /> : <Play size={15} aria-hidden="true" />}
+          <Button
+            variant="primary"
+            size="sm"
+            iconOnly
+            aria-label={player.playing ? t('audio.pause') : t('audio.play')}
+            onClick={play}
+          >
+            {player.playing ? (
+              <Pause size={15} aria-hidden="true" />
+            ) : (
+              <Play size={15} aria-hidden="true" />
+            )}
           </Button>
           <Button
             variant="ghost"
@@ -265,22 +301,52 @@ function Editor({ item, audio }: { item: MediaItem; audio: AudioData }) {
               />
             </span>
             <span className={cx(styles.meterPeak, clipping && styles.clipping)}>
-              {clipping ? t('audio.clipping') : Number.isFinite(levelDb) ? `${levelDb.toFixed(1)}` : '−∞'}
+              {clipping
+                ? t('audio.clipping')
+                : Number.isFinite(levelDb)
+                  ? `${levelDb.toFixed(1)}`
+                  : '−∞'}
             </span>
           </span>
 
           <span className={styles.spacer} />
 
-          <Button variant="ghost" size="sm" iconOnly aria-label={t('common.undo')} disabled={!editor.canUndo} onClick={() => editor.undo()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label={t('common.undo')}
+            disabled={!editor.canUndo}
+            onClick={() => editor.undo()}
+          >
             <Undo2 size={15} aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="sm" iconOnly aria-label={t('common.redo')} disabled={!editor.canRedo} onClick={() => editor.redo()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label={t('common.redo')}
+            disabled={!editor.canRedo}
+            onClick={() => editor.redo()}
+          >
             <Redo2 size={15} aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="sm" iconOnly aria-label={t('audio.zoomOut')} onClick={() => zoom(1.6)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label={t('audio.zoomOut')}
+            onClick={() => zoom(1.6)}
+          >
             <ZoomOut size={15} aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="sm" iconOnly aria-label={t('audio.zoomIn')} onClick={() => zoom(1 / 1.6)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label={t('audio.zoomIn')}
+            onClick={() => zoom(1 / 1.6)}
+          >
             <ZoomIn size={15} aria-hidden="true" />
           </Button>
           <Button
@@ -443,7 +509,10 @@ function Editor({ item, audio }: { item: MediaItem; audio: AudioData }) {
                     id={id}
                     value={String(options.audio.bitrateKbps)}
                     onChange={(next) =>
-                      setOptions({ ...options, audio: { ...options.audio, bitrateKbps: Number(next) } })
+                      setOptions({
+                        ...options,
+                        audio: { ...options.audio, bitrateKbps: Number(next) },
+                      })
                     }
                     options={AUDIO_BITRATES.map((rate) => ({
                       value: String(rate),
@@ -465,7 +534,9 @@ function Editor({ item, audio }: { item: MediaItem; audio: AudioData }) {
               <Download size={14} aria-hidden="true" />
               {t('audio.export')}
             </Button>
-            {editor.hasPreview ? <Notice tone="warning">{t('audio.previewNotExported')}</Notice> : null}
+            {editor.hasPreview ? (
+              <Notice tone="warning">{t('audio.previewNotExported')}</Notice>
+            ) : null}
           </section>
         </div>
       </aside>

@@ -2,12 +2,7 @@ import { Eye, EyeOff, Lock, LockOpen, Volume2, VolumeX, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { VideoEditor } from '../../core/video/editor';
 import { clipEnd, isTextClip, type Clip, type Track } from '../../core/video/project';
-import {
-  pixelsToTime,
-  snap,
-  snapTargets,
-  timeToPixels,
-} from '../../core/video/timeline';
+import { pixelsToTime, snap, snapTargets, timeToPixels } from '../../core/video/timeline';
 import { formatTimecode } from '../../core/util/format';
 import { useT } from '../../i18n';
 import { cx } from '../../ui/cx';
@@ -28,6 +23,17 @@ interface Drag {
 export interface TimelineProps {
   editor: VideoEditor;
   zoom: number;
+  /**
+   * Dónde está el cabezal *ahora mismo*, en segundos.
+   *
+   * Durante la reproducción no es `editor.playhead`: el reloj lo lleva el
+   * reproductor de la vista previa, y el editor solo se entera al parar. Antes
+   * se dibujaba `editor.playhead`, así que el contador de arriba avanzaba y la
+   * línea se quedaba clavada en el sitio donde se había pulsado play.
+   */
+  playhead: number;
+  /** Si está reproduciéndose, la vista sigue al cabezal cuando se le escapa. */
+  playing: boolean;
   /** Full source lengths, so a trim cannot run past the material. */
   sourceDurations: ReadonlyMap<string, number>;
   /** File names, so a clip is labelled with what it actually is. */
@@ -47,7 +53,11 @@ function trackIcons(track: Track, editor: VideoEditor, labels: Record<string, st
         title={labels['lock']}
         onClick={() => editor.updateTrack(track.id, { locked: !track.locked })}
       >
-        {track.locked ? <Lock size={12} aria-hidden="true" /> : <LockOpen size={12} aria-hidden="true" />}
+        {track.locked ? (
+          <Lock size={12} aria-hidden="true" />
+        ) : (
+          <LockOpen size={12} aria-hidden="true" />
+        )}
       </button>
       {isAudio ? (
         <button
@@ -58,7 +68,11 @@ function trackIcons(track: Track, editor: VideoEditor, labels: Record<string, st
           title={labels['mute']}
           onClick={() => editor.updateTrack(track.id, { muted: !track.muted })}
         >
-          {track.muted ? <VolumeX size={12} aria-hidden="true" /> : <Volume2 size={12} aria-hidden="true" />}
+          {track.muted ? (
+            <VolumeX size={12} aria-hidden="true" />
+          ) : (
+            <Volume2 size={12} aria-hidden="true" />
+          )}
         </button>
       ) : (
         <button
@@ -69,7 +83,11 @@ function trackIcons(track: Track, editor: VideoEditor, labels: Record<string, st
           title={labels['hide']}
           onClick={() => editor.updateTrack(track.id, { hidden: !track.hidden })}
         >
-          {track.hidden ? <EyeOff size={12} aria-hidden="true" /> : <Eye size={12} aria-hidden="true" />}
+          {track.hidden ? (
+            <EyeOff size={12} aria-hidden="true" />
+          ) : (
+            <Eye size={12} aria-hidden="true" />
+          )}
         </button>
       )}
       <button
@@ -93,7 +111,15 @@ function trackIcons(track: Track, editor: VideoEditor, labels: Record<string, st
  * editor people can drive from the keyboard matters more here than shaving a
  * millisecond off a repaint.
  */
-export function Timeline({ editor, zoom, sourceDurations, sourceNames, onSeek }: TimelineProps) {
+export function Timeline({
+  editor,
+  zoom,
+  playhead,
+  playing,
+  sourceDurations,
+  sourceNames,
+  onSeek,
+}: TimelineProps) {
   const t = useT();
   const project = editor.getProject();
   const lanesRef = useRef<HTMLDivElement>(null);
@@ -103,6 +129,23 @@ export function Timeline({ editor, zoom, sourceDurations, sourceNames, onSeek }:
 
   const duration = Math.max(editor.duration, 10);
   const contentWidth = Math.max(width, timeToPixels(duration + 5, zoom));
+
+  /**
+   * Mantiene el cabezal a la vista mientras se reproduce.
+   *
+   * Solo durante la reproducción: si siguiera siempre, hacer clic cerca del
+   * borde recolocaría la vista de golpe y se perdería el sitio. El margen evita
+   * que el salto se dispare justo al llegar al borde, que da un tirón feo.
+   */
+  useEffect(() => {
+    const lanes = lanesRef.current;
+    if (!lanes || !playing) return;
+    const x = timeToPixels(playhead, zoom);
+    const margin = 48;
+    if (x >= lanes.scrollLeft + margin && x <= lanes.scrollLeft + lanes.clientWidth - margin)
+      return;
+    lanes.scrollLeft = Math.max(0, x - lanes.clientWidth / 2);
+  }, [playhead, playing, zoom]);
 
   useEffect(() => {
     const node = lanesRef.current;
@@ -179,7 +222,7 @@ export function Timeline({ editor, zoom, sourceDurations, sourceNames, onSeek }:
     if (!current) return;
     const time = timeAtPointer(event.clientX);
     const tolerance = editor.snapping ? pixelsToTime(SNAP_PIXELS, zoom) : 0;
-    const targets = snapTargets(project, editor.playhead, current.clipId);
+    const targets = snapTargets(project, playhead, current.clipId);
 
     if (current.kind === 'move') {
       const raw = time - current.grabOffset;
@@ -196,8 +239,7 @@ export function Timeline({ editor, zoom, sourceDurations, sourceNames, onSeek }:
       .find((candidate) => candidate.id === current.clipId);
     if (!clip) return;
     const edge = current.kind === 'trimStart' ? 'start' : 'end';
-    const sourceDuration =
-      'sourceId' in clip ? sourceDurations.get(clip.sourceId) : undefined;
+    const sourceDuration = 'sourceId' in clip ? sourceDurations.get(clip.sourceId) : undefined;
     editor.trimClip(current.clipId, edge, snap(time, targets, tolerance), sourceDuration);
   };
 
@@ -241,11 +283,11 @@ export function Timeline({ editor, zoom, sourceDurations, sourceNames, onSeek }:
           aria-label={t('video.timeline')}
           aria-valuemin={0}
           aria-valuemax={Math.round(duration)}
-          aria-valuenow={Math.round(editor.playhead)}
+          aria-valuenow={Math.round(playhead)}
           onPointerDown={(event) => onSeek(timeAtPointer(event.clientX))}
           onKeyDown={(event) => {
-            if (event.key === 'ArrowRight') onSeek(editor.playhead + 1 / project.fps);
-            if (event.key === 'ArrowLeft') onSeek(Math.max(0, editor.playhead - 1 / project.fps));
+            if (event.key === 'ArrowRight') onSeek(playhead + 1 / project.fps);
+            if (event.key === 'ArrowLeft') onSeek(Math.max(0, playhead - 1 / project.fps));
           }}
         >
           <canvas ref={rulerRef} className={styles.rulerCanvas} aria-hidden="true" />
@@ -318,7 +360,7 @@ export function Timeline({ editor, zoom, sourceDurations, sourceNames, onSeek }:
 
         <div
           className={styles.playhead}
-          style={{ left: timeToPixels(editor.playhead, zoom), height: '100%' }}
+          style={{ left: timeToPixels(playhead, zoom), height: '100%' }}
         >
           <span className={styles.playheadKnob} />
         </div>

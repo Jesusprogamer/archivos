@@ -3,7 +3,15 @@
   display: grid;
   grid-template-rows: var(--topbar-h) 1fr;
   background: var(--bg-canvas);
+  /*
+   * `clip` en vez de `hidden`, y no es cosmética: `hidden` crea un contenedor
+   * desplazable que el usuario no puede desplazar. Bastaba con que el navegador
+   * enfocara algo de más abajo para que el estudio entero se fuera de la
+   * pantalla sin vuelta atrás. `clip` no crea contenedor, así que el problema
+   * deja de ser posible. `hidden` queda de reserva para navegadores viejos.
+   */
   overflow: hidden;
+  overflow: clip;
 }
 
 /* ---- Top bar ---- */
@@ -94,7 +102,9 @@
 .main {
   min-width: 0;
   min-height: 0;
+  /* Ver el comentario de `.studio`: este era el que acababa desplazado. */
   overflow: hidden;
+  overflow: clip;
   display: flex;
   flex-direction: column;
   position: relative;
