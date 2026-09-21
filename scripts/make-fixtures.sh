@@ -26,4 +26,13 @@ mkdir -p "$OUT"
 "$FFMPEG" -y -hide_banner -loglevel error -f lavfi -i "color=c=0x00b140:size=400x300:duration=1" \
   -vf "drawbox=x=120:y=80:w=160:h=140:color=0xd62828:t=fill" -frames:v 1 "$OUT/greenscreen.png"
 
+# The unit tests only ever read the first few kilobytes, which is what the
+# format detector looks at. Committing just those slices keeps `npm test`
+# working on a fresh clone without putting media binaries in the repository.
+mkdir -p "$OUT/headers"
+for file in "$OUT"/*.mp3 "$OUT"/*.wav "$OUT"/*.mp4 "$OUT"/*.webm "$OUT"/*.png "$OUT"/*.jpg "$OUT"/*.webp; do
+  [ -e "$file" ] || continue
+  head -c 4096 "$file" > "$OUT/headers/$(basename "$file").head"
+done
+
 ls -la "$OUT"

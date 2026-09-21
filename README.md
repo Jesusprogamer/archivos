@@ -206,7 +206,11 @@ npx playwright install chromium && npm run e2e
 ```
 
 Los archivos de prueba se generan con `npm run fixtures` y **no** están en el
-repositorio (son binarios reproducibles).
+repositorio: son binarios reproducibles. Lo que sí está son las **cabeceras**
+—los primeros cuatro kilobytes de cada uno, que es justo lo que lee el detector
+de formatos—, para que `npm test` funcione recién clonado sin necesidad de
+ffmpeg. Los tests end-to-end sí necesitan los archivos completos, y te lo dicen
+con ese mismo comando si faltan.
 
 ---
 
