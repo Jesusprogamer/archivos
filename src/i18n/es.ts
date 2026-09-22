@@ -547,6 +547,15 @@ export const es = {
   'vis.exportDone': 'Visualizador exportado',
   'vis.decodeFailed': 'No se ha podido descodificar este audio',
 
+  'video.effects': 'Efectos',
+  'video.beatPunch': 'Golpe al ritmo',
+  'video.beatPunchHelp':
+    'El clip late con los graves de la música del proyecto, como hace el visualizador. A 0 está apagado. Necesita que haya audio en alguna pista.',
+  'vis.background.transparent': 'Transparente',
+  'vis.background.transparentHelp':
+    'El fondo queda vacío, para montar el visual sobre otra cosa. Se conserva al exportar en WebM; MP4 no tiene canal alfa.',
+  'vis.background.mp4NoAlpha':
+    'MP4 no puede guardar transparencia: el fondo saldrá negro. Exporta en WebM para conservarla.',
   'pwa.section': 'Aplicación',
   'pwa.install': 'Instalar aplicación',
   'pwa.installShort': 'Instalar',

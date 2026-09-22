@@ -135,4 +135,36 @@ test.describe('Video editor', () => {
     await expect(page.getByText('Añade algo a la línea de tiempo antes de exportar.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Exportar vídeo' })).toBeDisabled();
   });
+
+  test('exporta a MP4, que es el formato por defecto', async ({ page }) => {
+    const { errors } = watchForErrors(page);
+    await openVideoEditor(page);
+
+    await page.getByRole('button', { name: 'Exportar', exact: true }).click();
+    await page.getByLabel('Resolución').selectOption('480');
+    await page.getByLabel('Fotogramas por segundo').selectOption('24');
+
+    /*
+     * Este test faltaba, y su ausencia costó cara: la suite solo exportaba
+     * WebM, «para no depender de un Chromium sin H.264». Pero el que no haya
+     * descodificador no impide comprobar que ffmpeg produce el archivo — y no
+     * lo producía. Sin `-threads`, libx264 se cae contra el núcleo multihilo
+     * (PLAN §3.8), así que pulsar Exportar con los ajustes de fábrica no
+     * terminaba nunca.
+     *
+     * De ahí el tiempo de espera corto y deliberado: si esto vuelve a colgarse,
+     * el test tiene que fallar, no esperar callado hasta el límite global.
+     */
+    const download = page.waitForEvent('download', { timeout: 90_000 });
+    await page.getByRole('button', { name: 'Exportar vídeo' }).click();
+    const file = await download;
+
+    expect(file.suggestedFilename()).toBe('clip-forja.mp4');
+    const { readFile } = await import('node:fs/promises');
+    const bytes = await readFile(await file.path());
+    expect(bytes.length).toBeGreaterThan(1000);
+    // La caja `ftyp` de ISO-BMFF: prueba de que es un MP4 y no un archivo a medias.
+    expect(bytes.subarray(4, 8).toString('latin1')).toBe('ftyp');
+    expectNoErrors(errors);
+  });
 });

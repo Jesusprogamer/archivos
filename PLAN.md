@@ -119,6 +119,75 @@ Ahora hay dos tests que **completan**: uno que convierte a todos los formatos de
 audio y comprueba cada archivo, y otro que lleva una conversión WebM hasta el
 final y verifica la cabecera EBML del resultado.
 
+### 3.7 Vídeo con canal alfa — **medido, y con una sorpresa**
+
+Antes de ofrecer «fondo transparente» en el visualizador:
+
+| Comprobación                                 | Resultado                         |
+| -------------------------------------------- | --------------------------------- |
+| `libvpx` admite `yuva420p`                   | ✅ lo dice él mismo               |
+| Codifica sin caerse                          | ✅ y el archivo con alfa pesa más |
+| **ffmpeg lo vuelve a descodificar con alfa** | ❌ lo pierde                      |
+| **El navegador lo reproduce con alfa**       | ✅ alfa 0 donde debe              |
+
+La sorpresa es la discrepancia: el propio ffmpeg pierde el canal al
+descodificar el WebM que acaba de escribir, pero Chrome lo respeta. Se decidió
+por el navegador porque es el consumidor real del archivo. Confirmado después
+de extremo a extremo con una exportación de verdad, no solo en el spike.
+
+`-auto-alt-ref 0` es obligatorio: libvpx no admite los cuadros de referencia
+alternativos junto con alfa. Y los fotogramas intermedios pasan de JPEG a PNG,
+porque JPEG no tiene canal alfa.
+
+**MP4 queda fuera y se dice**: H.264 no tiene canal alfa, así que elegir fondo
+transparente y formato MP4 saca un aviso en lugar de aplanarlo a negro en
+silencio.
+
+### 3.8 libx264 se cae contra el núcleo multihilo — **el fallo más caro hasta ahora**
+
+Reportado como «exportar tarda mucho». No era lentitud: **no terminaba nunca**,
+y MP4 es el formato por defecto, así que lo sufría cualquiera que pulsara
+Exportar sin tocar los ajustes.
+
+Medido con 48 fotogramas a 854×480:
+
+| `-threads`      | libx264                | libx265 | libvpx |
+| --------------- | ---------------------- | ------- | ------ |
+| sin especificar | **se cae tras el 1.º** | 3,8 s   | 1,2 s  |
+| 1               | 2,1 s                  | 4,7 s   | —      |
+| 2               | **1,3 s**              | —       | —      |
+| 4               | 1,3 s                  | —       | 1,1 s  |
+
+La explicación que encaja: ffmpeg deduce los hilos de los núcleos de la máquina
+y pide más de los que tiene el grupo con el que se compiló el núcleo wasm. Un
+tope bajo cabe siempre.
+
+Dos cosas que hacen esto mejor que un parche:
+
+- Los tres recuentos producen **bytes idénticos**. Subirlo de 1 a 2 no cambia
+  un solo píxel: es velocidad gratis, no un compromiso de calidad.
+- A libx265 le sienta **peor** forzarlo, y no lo necesita. Así que el arreglo
+  es solo para x264, no un `-threads` a todo por si acaso.
+
+Efecto medido de extremo a extremo, clip de 2 s:
+
+|                                 | Antes                    | Después |
+| ------------------------------- | ------------------------ | ------- |
+| Exportar MP4 720p 30fps         | **>180 s, sin terminar** | 5,2 s   |
+| Exportar MP4 480p 24fps         | **>180 s, sin terminar** | 3,6 s   |
+| Convertir a MP4                 | no medido                | 2,0 s   |
+| Exportar WebM 720p (referencia) | 6,0 s                    | 5,7 s   |
+
+#### Por qué no lo cazó la suite
+
+Por la misma razón que los tres códecs rotos de §3.6, y es incómodo que se
+repita: **el único test de exportación usaba WebM**, con el razonamiento de que
+un Chromium sin H.264 no podría descodificar el MP4 para comprobarlo. El
+razonamiento confunde dos cosas. Que no haya descodificador no impide comprobar
+que **ffmpeg produce el archivo**, que es justo lo que fallaba. Ahora hay un
+test que exporta MP4 y verifica la caja `ftyp`, con un tiempo de espera corto y
+deliberado: si vuelve a colgarse tiene que fallar, no esperar callado.
+
 ### 3.4 WebCodecs
 
 Disponible, pero **el soporte por códec hay que preguntarlo en caliente**. En el

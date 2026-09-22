@@ -33,7 +33,15 @@ export const ASPECTS: Readonly<Record<AspectId, number>> = {
 };
 
 export interface BackgroundSettings {
-  readonly kind: 'color' | 'gradient' | 'image';
+  /**
+   * `transparent` deja el lienzo vacío en lugar de pintarlo.
+   *
+   * Solo sobrevive a la exportación en WebM: MP4/H.264 no tiene canal alfa, ni
+   * lo tendrá. Medido en el spike 7 (PLAN §3.7): libvpx admite `yuva420p` y el
+   * navegador reproduce el resultado con transparencia real, aunque el propio
+   * ffmpeg la pierda al volver a descodificarlo.
+   */
+  readonly kind: 'color' | 'gradient' | 'image' | 'transparent';
   readonly color: string;
   readonly gradientTo: string;
   /** Degrees; 0 is left to right. */

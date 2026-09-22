@@ -3,8 +3,16 @@ import {
   isMediaClip,
   projectDuration,
   sourceTimeAt,
+  type MediaClip,
   type VideoProject,
 } from '../../core/video/project';
+import {
+  analyseProjectBeat,
+  bassAt,
+  EMPTY_BEAT,
+  projectUsesBeat,
+  type BeatTrack,
+} from '../../core/video/beat';
 import { renderFrame, type Canvas2D } from '../../core/video/renderer';
 import type { SourceManager } from '../../core/video/sources';
 
@@ -40,6 +48,9 @@ export class PreviewPlayer {
   private project: VideoProject | undefined;
   private sources: SourceManager | undefined;
   private scale = 1;
+  private beat: BeatTrack = EMPTY_BEAT;
+  /** Firma del audio con el que se hizo `beat`, para no rehacerlo por nada. */
+  private beatKey = '';
 
   readonly subscribe = (listener: Listener): (() => void) => {
     this.listeners.add(listener);
@@ -66,12 +77,56 @@ export class PreviewPlayer {
     this.project = project;
     this.sources = sources;
     this.scale = scale;
+    this.refreshBeat(project, sources);
+  }
+
+  /**
+   * Rehace el análisis de graves solo cuando puede haber cambiado.
+   *
+   * Mover un clip de vídeo o tocar su opacidad no cambia la música, y analizar
+   * la mezcla entera en cada arrastre haría el editor inusable. La firma reúne
+   * lo único que afecta al resultado: qué se oye, desde dónde y cuánto.
+   */
+  private refreshBeat(project: VideoProject, sources: SourceManager): void {
+    if (!projectUsesBeat(project)) {
+      this.beat = EMPTY_BEAT;
+      this.beatKey = '';
+      return;
+    }
+
+    const key = project.tracks
+      .filter((track) => !track.muted)
+      .flatMap((track) =>
+        track.clips
+          .filter((clip) => isMediaClip(clip) && clip.kind !== 'image' && !clip.muted)
+          .map((clip) => {
+            const media = clip as MediaClip;
+            return [
+              media.sourceId,
+              media.start,
+              media.duration,
+              media.inPoint,
+              media.speed,
+              media.volume,
+              media.fadeIn,
+              media.fadeOut,
+            ].join(':');
+          }),
+      )
+      .join('|');
+
+    if (key === this.beatKey) return;
+    this.beatKey = key;
+    this.beat = analyseProjectBeat(project, (id) => sources.audioFor(id));
   }
 
   /** Draws the current frame without advancing the clock. */
   draw(): void {
     if (!this.context || !this.project || !this.sources) return;
-    renderFrame(this.context, this.project, this.time, this.sources.lookup, { scale: this.scale });
+    renderFrame(this.context, this.project, this.time, this.sources.lookup, {
+      scale: this.scale,
+      bassAt: (seconds) => bassAt(this.beat, seconds),
+    });
   }
 
   /** Moves the playhead and pulls every source into place for a still frame. */

@@ -122,6 +122,14 @@ export interface ClipBase {
   readonly fadeOut: number;
   /** A transition into this clip from the one before it on the same track. */
   readonly transition: Transition;
+  /**
+   * 0–1: cuánto late el clip con los graves de la música del proyecto.
+   *
+   * 0 lo apaga, y es lo normal. Es el mismo efecto que hace el visualizador,
+   * con el mismo análisis, para que un clip y un visualizador montados sobre
+   * la misma música laten igual.
+   */
+  readonly beatPunch: number;
 }
 
 export interface MediaClip extends ClipBase {

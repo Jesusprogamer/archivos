@@ -1,3 +1,4 @@
+import { punchScale } from './beat';
 import { fontShorthand } from './fonts';
 import {
   clipEnd,
@@ -44,6 +45,14 @@ export type SourceLookup = (sourceId: string) => RenderSource | undefined;
 export interface RenderOptions {
   /** Draw at a fraction of project size, for a cheaper live preview. */
   readonly scale?: number;
+  /**
+   * Energía de graves del proyecto en un instante, 0–1.
+   *
+   * La calcula quien llama a partir del análisis de la mezcla, y es la misma
+   * función en la vista previa y en la exportación: por eso el golpe al ritmo
+   * sale idéntico en las dos.
+   */
+  readonly bassAt?: (seconds: number) => number;
 }
 
 /** How a source is placed inside the project frame. */
@@ -324,14 +333,33 @@ export function renderFrame(
     for (const clip of track.clips) {
       if (time < clip.start || time >= clipEnd(clip)) continue;
 
+      // El golpe al ritmo agranda el clip alrededor del centro del cuadro, no
+      // del suyo: así varios clips laten a la vez sin separarse unos de otros.
+      const punch =
+        clip.beatPunch > 0 && options.bassAt
+          ? punchScale(clip.beatPunch, options.bassAt(time))
+          : 1;
+      const pulsing = punch !== 1;
+      if (pulsing) {
+        context.save();
+        context.translate(project.width / 2, project.height / 2);
+        context.scale(punch, punch);
+        context.translate(-project.width / 2, -project.height / 2);
+      }
+
       if (isTextClip(clip)) {
         drawTextClip(context, clip, time, project.width, project.height);
+        if (pulsing) context.restore();
         continue;
       }
 
       const source = lookup(clip.sourceId);
-      if (!source) continue;
+      if (!source) {
+        if (pulsing) context.restore();
+        continue;
+      }
       drawMediaClip(context, clip, source, time, project.width, project.height);
+      if (pulsing) context.restore();
 
       // A fade-to-black transition dips the whole frame at its midpoint, so it
       // is painted over everything drawn so far.

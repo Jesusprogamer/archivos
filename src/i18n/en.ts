@@ -544,6 +544,15 @@ export const en: Dictionary = {
   'vis.exportDone': 'Visualiser exported',
   'vis.decodeFailed': 'This audio could not be decoded',
 
+  'video.effects': 'Effects',
+  'video.beatPunch': 'Beat punch',
+  'video.beatPunchHelp':
+    "The clip pulses with the bass of the project's music, the way the visualiser does. At 0 it is off. It needs audio on some track.",
+  'vis.background.transparent': 'Transparent',
+  'vis.background.transparentHelp':
+    'The background is left empty, so the visual can sit over something else. It survives a WebM export; MP4 has no alpha channel.',
+  'vis.background.mp4NoAlpha':
+    'MP4 cannot store transparency: the background will come out black. Export as WebM to keep it.',
   'pwa.section': 'App',
   'pwa.install': 'Install app',
   'pwa.installShort': 'Install',

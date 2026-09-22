@@ -1,6 +1,8 @@
 import { encodeWav } from '../audio/wav';
+import { x264ThreadArgs } from '../ffmpeg/threads';
 import { FFmpegCancelled, ffmpeg } from '../ffmpeg/client';
 import { isMediaClip, clipEnd, projectDuration, sourceTimeAt, type VideoProject } from './project';
+import { analyseAudioBeat, bassAt, EMPTY_BEAT, projectUsesBeat } from './beat';
 import { mixProject, type AudioSourceLookup } from './mixdown';
 import { renderFrame } from './renderer';
 import type { SourceManager } from './sources';
@@ -89,6 +91,9 @@ function videoArgs(settings: ExportSettings): string[] {
     '-preset', settings.quality === 'high' ? 'medium' : 'veryfast',
     '-crf', String(CRF.mp4[settings.quality]),
     '-pix_fmt', 'yuv420p',
+    // Obligatorio, no una mejora: sin esto libx264 se cae contra el núcleo
+    // multihilo de ffmpeg.wasm. Ver `x264ThreadArgs` y PLAN §3.8.
+    ...x264ThreadArgs(),
   ];
 }
 
@@ -137,6 +142,11 @@ export async function exportProject(
   // ---- frame render.
   const { audio, peak } = mixProject(project, audioLookup);
   const hasAudio = peak > 0;
+
+  // El golpe al ritmo sale del mismo análisis que la vista previa, sobre la
+  // mezcla que acabamos de hacer: ni se mezcla dos veces ni puede discrepar.
+  const beat = projectUsesBeat(project) ? analyseAudioBeat(audio) : EMPTY_BEAT;
+  const beatAt = (seconds: number) => bassAt(beat, seconds);
   if (hasAudio) {
     await ffmpeg.writeFile('mix.wav', new Uint8Array(await encodeWav(audio).arrayBuffer()));
   }
@@ -175,7 +185,7 @@ export async function exportProject(
     const time = frame / settings.fps;
 
     await sources.seekAll(sourceTimesAt(project, time));
-    renderFrame(canvasContext, project, time, sources.lookup, { scale });
+    renderFrame(canvasContext, project, time, sources.lookup, { scale, bassAt: beatAt });
 
     const still = await canvas.convertToBlob({
       type: 'image/jpeg',

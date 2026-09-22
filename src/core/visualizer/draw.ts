@@ -36,6 +36,14 @@ function paintBackground(
   const { background } = scene;
   context.save();
 
+  if (background.kind === 'transparent') {
+    // Vaciar, no pintar: cualquier relleno, aunque sea de color transparente,
+    // dejaría el fotograma anterior debajo al dibujar encima.
+    context.clearRect(0, 0, size.width, size.height);
+    context.restore();
+    return;
+  }
+
   if (background.kind === 'image' && assets.background) {
     const image = assets.background;
     const imageWidth = 'width' in image ? Number(image.width) : size.width;
