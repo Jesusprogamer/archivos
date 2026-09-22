@@ -47,6 +47,7 @@ function mediaClip(overrides: Partial<MediaClip> = {}): MediaClip {
     color: NEUTRAL_COLOR,
     transform: DEFAULT_TRANSFORM,
     keyframes: {},
+    beatPunch: 0,
     fadeIn: 0,
     fadeOut: 0,
     transition: NO_TRANSITION,

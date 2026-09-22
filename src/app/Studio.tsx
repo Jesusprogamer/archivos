@@ -129,6 +129,14 @@ export function Studio({
       </header>
 
       <div className={styles.body}>
+        {libraryCollapsed ? null : (
+          <button
+            type="button"
+            className={styles.scrim}
+            aria-label={t('common.close')}
+            onClick={onToggleLibrary}
+          />
+        )}
         <Library collapsed={libraryCollapsed} onCollapse={onToggleLibrary} />
         <main className={styles.main} id="main">
           {View ? (

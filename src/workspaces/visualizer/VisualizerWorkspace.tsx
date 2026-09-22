@@ -29,6 +29,7 @@ import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { Field } from '../../ui/Field';
 import { Notice } from '../../ui/Notice';
+import { cx } from '../../ui/cx';
 import { Progress, Spinner } from '../../ui/Progress';
 import { SegmentedControl } from '../../ui/SegmentedControl';
 import { Slider } from '../../ui/Slider';
@@ -91,6 +92,7 @@ function Editor({ item, audio }: { item: MediaItem; audio: AudioData }) {
 
   const duration = durationOf(audio);
   const size = frameSize(scene);
+  const transparent = scene.background.kind === 'transparent';
 
   /**
    * The whole track is analysed up front, and only re-analysed when a setting
@@ -124,12 +126,14 @@ function Editor({ item, audio }: { item: MediaItem; audio: AudioData }) {
         canvas.width = size.width;
         canvas.height = size.height;
       }
-      const context = canvas.getContext('2d', { alpha: false });
+      // Una vez creado, el contexto ignora nuevas opciones, así que el lienzo
+      // se remonta (ver la `key` de abajo) cuando cambia la transparencia.
+      const context = canvas.getContext('2d', { alpha: transparent });
       if (!context) return;
       const index = Math.max(0, Math.min(frames.length - 1, Math.round(seconds * scene.fps)));
       drawScene(context, scene, frames[index], index, size, assets);
     },
-    [frames, scene, size, assets],
+    [frames, scene, size, assets, transparent],
   );
 
   // Redraw whenever anything about the look changes, even while paused.
@@ -201,8 +205,9 @@ function Editor({ item, audio }: { item: MediaItem; audio: AudioData }) {
       <div className={styles.stage}>
         <div className={styles.previewArea}>
           <canvas
+            key={transparent ? 'alpha' : 'opaque'}
             ref={canvasRef}
-            className={styles.previewCanvas}
+            className={cx(styles.previewCanvas, transparent && 'checkerboard')}
             style={{ aspectRatio: `${size.width} / ${size.height}` }}
             aria-label={t('vis.title')}
           />
@@ -339,6 +344,9 @@ function Editor({ item, audio }: { item: MediaItem; audio: AudioData }) {
                 { value: 'webm', label: 'WebM (VP8)' },
               ]}
             />
+            {transparent && format === 'mp4' ? (
+              <Notice tone="warning">{t('vis.background.mp4NoAlpha')}</Notice>
+            ) : null}
             <p className={panel.specs} style={{ display: 'block', color: 'var(--fg-muted)' }}>
               {size.width} × {size.height} · {formatDuration(duration)} · {frames.length}{' '}
               {t('video.fps').toLowerCase()}

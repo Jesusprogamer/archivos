@@ -159,5 +159,8 @@
     inset-inline-start: 0;
     z-index: var(--z-panel);
     box-shadow: var(--shadow-lg);
+    /* En pantallas estrechas 300px se comían casi todo; deja ver que hay algo
+       detrás, que es lo que invita a cerrarlo. */
+    max-width: min(300px, 82vw);
   }
 }

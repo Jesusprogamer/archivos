@@ -168,3 +168,25 @@ describe('gifArgs', () => {
     expect(gifArgs(options(), 'in.mp4', 'pal.png').second).toContain('-loop');
   });
 });
+
+describe('los argumentos de vídeo que no pueden faltar', () => {
+  /**
+   * Una exportación a MP4 no terminaba nunca. No era lentitud: sin `-threads`
+   * explícito, libx264 se cae contra el núcleo multihilo, que es el que se usa
+   * siempre que la página está aislada (PLAN §3.8). Como MP4 es el formato por
+   * defecto, el fallo lo veía cualquiera que pulsara Exportar.
+   */
+  it('pasa -threads a libx264, sin lo cual se cae', () => {
+    const args = argsFor('mp4');
+    const index = args.indexOf('-threads');
+    expect(args).toContain('libx264');
+    expect(index).toBeGreaterThan(-1);
+    expect(Number(args[index + 1])).toBeGreaterThan(0);
+  });
+
+  it('no se lo pasa a libx265, al que le sienta peor y no lo necesita', () => {
+    const args = argsFor('mp4-h265');
+    expect(args).toContain('libx265');
+    expect(args).not.toContain('-threads');
+  });
+});

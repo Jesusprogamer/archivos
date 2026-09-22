@@ -1,5 +1,6 @@
 import type { AudioData } from '../audio/buffer';
 import { encodeWav } from '../audio/wav';
+import { x264ThreadArgs } from '../ffmpeg/threads';
 import { FFmpegCancelled, ffmpeg } from '../ffmpeg/client';
 import type { Frame } from './analysis';
 import { drawScene, type DrawAssets } from './draw';
@@ -47,7 +48,17 @@ const CRF = {
 
 const WEBM_BITRATE = { high: '6M', balanced: '3M', small: '1500k' } as const;
 
-function videoArgs(settings: VisualizerExportSettings): string[] {
+/**
+ * ¿Hay que conservar el canal alfa?
+ *
+ * Solo cuando el fondo es transparente y el destino es WebM. En MP4 no es una
+ * limitación nuestra: H.264 no tiene canal alfa.
+ */
+export function keepsAlpha(scene: VisualizerScene, format: VisualizerFormat): boolean {
+  return scene.background.kind === 'transparent' && format === 'webm';
+}
+
+function videoArgs(settings: VisualizerExportSettings, alpha: boolean): string[] {
   if (settings.format === 'webm') {
     // VP8 and Vorbis, for the reasons measured in PLAN.md §3.6: this build's
     // VP9 and stereo Opus both trap.
@@ -57,6 +68,9 @@ function videoArgs(settings: VisualizerExportSettings): string[] {
       '-b:v', WEBM_BITRATE[settings.quality],
       '-deadline', settings.quality === 'high' ? 'good' : 'realtime',
       '-cpu-used', settings.quality === 'high' ? '2' : '5',
+      // `yuva420p` guarda el canal alfa; `auto-alt-ref` tiene que estar
+      // apagado porque libvpx no lo admite junto con alfa y aborta.
+      ...(alpha ? ['-pix_fmt', 'yuva420p', '-auto-alt-ref', '0'] : []),
     ];
   }
   return [
@@ -64,6 +78,8 @@ function videoArgs(settings: VisualizerExportSettings): string[] {
     '-preset', settings.quality === 'high' ? 'medium' : 'veryfast',
     '-crf', String(CRF.mp4[settings.quality]),
     '-pix_fmt', 'yuv420p',
+    // Obligatorio, no una mejora: ver `x264ThreadArgs` y PLAN §3.8.
+    ...x264ThreadArgs(),
   ];
 }
 
@@ -77,9 +93,11 @@ export async function exportVisualizer(
 ): Promise<Blob> {
   if (frames.length === 0) throw new Error('there is nothing to render');
 
+  const alpha = keepsAlpha(scene, settings.format);
   const size = frameSize(scene);
   const canvas = new OffscreenCanvas(size.width, size.height);
-  const canvasContext = canvas.getContext('2d', { alpha: false });
+  // Sin alfa el contexto es más rápido, así que solo se pide cuando hace falta.
+  const canvasContext = canvas.getContext('2d', { alpha });
   if (!canvasContext) throw new Error('2D context unavailable');
 
   const check = () => {
@@ -101,8 +119,8 @@ export async function exportVisualizer(
     await ffmpeg.run(
       [
         '-framerate', String(scene.fps),
-        '-i', 'v%05d.jpg',
-        ...videoArgs(settings),
+        '-i', `v%05d.${alpha ? 'png' : 'jpg'}`,
+        ...videoArgs(settings, alpha),
         '-an',
         '-y', name,
       ],
@@ -119,8 +137,12 @@ export async function exportVisualizer(
     check();
     drawScene(canvasContext, scene, frames[index], index, size, assets);
 
-    const still = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.92 });
-    const name = `v${String(inSegment).padStart(5, '0')}.jpg`;
+    // JPEG por defecto porque es bastante más rápido de codificar y de leer;
+    // PNG solo cuando hay que conservar el alfa, que JPEG no tiene.
+    const still = alpha
+      ? await canvas.convertToBlob({ type: 'image/png' })
+      : await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.92 });
+    const name = `v${String(inSegment).padStart(5, '0')}.${alpha ? 'png' : 'jpg'}`;
     await ffmpeg.writeFile(name, new Uint8Array(await still.arrayBuffer()));
     written.push(name);
     inSegment += 1;

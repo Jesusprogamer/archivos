@@ -199,9 +199,16 @@ export function SceneControls({
             { value: 'color', label: t('vis.background.color') },
             { value: 'gradient', label: t('vis.background.gradient') },
             { value: 'image', label: t('vis.background.image') },
+            { value: 'transparent', label: t('vis.background.transparent') },
           ]}
         />
-        <div className={styles.pair}>
+        {scene.background.kind === 'transparent' ? (
+          <Notice tone="info">{t('vis.background.transparentHelp')}</Notice>
+        ) : null}
+        <div
+          className={styles.pair}
+          hidden={scene.background.kind === 'transparent'}
+        >
           <Field label={t('vis.background.color')}>
             {(id) => (
               <ColorInput

@@ -6,10 +6,12 @@ import {
   NO_TRANSITION,
   type MediaClip,
   type TextClip,
+  type VideoProject,
 } from './project';
 import {
   clipOpacityAt,
   fitContain,
+  renderFrame,
   textAnimationAt,
   transitionProgress,
   wrapText,
@@ -32,6 +34,7 @@ function clip(overrides: Partial<MediaClip> = {}): MediaClip {
     color: NEUTRAL_COLOR,
     transform: DEFAULT_TRANSFORM,
     keyframes: {},
+    beatPunch: 0,
     fadeIn: 0,
     fadeOut: 0,
     transition: NO_TRANSITION,
@@ -48,6 +51,7 @@ function textClip(overrides: Partial<TextClip> = {}): TextClip {
     duration: 5,
     transform: DEFAULT_TRANSFORM,
     keyframes: {},
+    beatPunch: 0,
     fadeIn: 0,
     fadeOut: 0,
     transition: NO_TRANSITION,
@@ -183,5 +187,83 @@ describe('wrapText', () => {
 
   it('never drops a word that is wider than the line', () => {
     expect(wrapText(context, 'supercalifragilistico', 50)).toEqual(['supercalifragilistico']);
+  });
+});
+
+/**
+ * Un contexto de dibujo falso que apunta lo que le piden.
+ *
+ * Un Proxy en vez de un doble escrito a mano: `renderFrame` toca muchos
+ * métodos y propiedades del canvas, y enumerarlos todos aquí sería una lista
+ * que envejece mal cada vez que el renderizador aprende algo nuevo.
+ */
+function recordingContext(): { context: Canvas2D; scales: number[] } {
+  const scales: number[] = [];
+  const context = new Proxy(
+    {},
+    {
+      get: (_target, property) => {
+        if (property === 'scale') return (x: number) => scales.push(x);
+        if (property === 'canvas') return { width: 1920, height: 1080 };
+        if (property === 'measureText') return () => ({ width: 10 });
+        return () => undefined;
+      },
+      set: () => true,
+    },
+  ) as unknown as Canvas2D;
+  return { context, scales };
+}
+
+describe('el golpe al ritmo', () => {
+  const project: VideoProject = {
+    id: 'p',
+    name: 'prueba',
+    schema: 1,
+    width: 1920,
+    height: 1080,
+    fps: 30,
+    backgroundColor: '#000000',
+    tracks: [
+      {
+        id: 't',
+        name: 'V1',
+        kind: 'video' as const,
+        locked: false,
+        hidden: false,
+        muted: false,
+        clips: [textClip({ trackId: 't', beatPunch: 1 })],
+      },
+    ],
+  };
+
+  const lookup = () => undefined;
+
+  it('no escala nada cuando no hay análisis que consultar', () => {
+    const { context, scales } = recordingContext();
+    renderFrame(context, project, 1, lookup);
+    // Solo la escala global de la vista previa, que aquí es 1.
+    expect(scales.filter((value) => value !== 1)).toEqual([]);
+  });
+
+  it('no escala nada en un momento sin graves', () => {
+    const { context, scales } = recordingContext();
+    renderFrame(context, project, 1, lookup, { bassAt: () => 0 });
+    expect(scales.filter((value) => value !== 1)).toEqual([]);
+  });
+
+  it('agranda el clip en el golpe', () => {
+    const { context, scales } = recordingContext();
+    renderFrame(context, project, 1, lookup, { bassAt: () => 1 });
+    expect(scales).toContain(1.18);
+  });
+
+  it('un clip con el efecto apagado no se mueve aunque suene el bombo', () => {
+    const off = {
+      ...project,
+      tracks: [{ ...project.tracks[0]!, clips: [textClip({ trackId: 't', beatPunch: 0 })] }],
+    };
+    const { context, scales } = recordingContext();
+    renderFrame(context, off, 1, lookup, { bassAt: () => 1 });
+    expect(scales.filter((value) => value !== 1)).toEqual([]);
   });
 });

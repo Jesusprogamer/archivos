@@ -122,4 +122,48 @@ test.describe('Audio visualiser', () => {
     expect(bytes.length).toBeGreaterThan(10_000);
     expectNoErrors(errors);
   });
+
+  test('un fondo transparente sale transparente de verdad', async ({ page }) => {
+    await openVisualizer(page);
+    await page.getByRole('button', { name: 'Transparente', exact: true }).click();
+
+    // MP4 está elegido por defecto y no tiene canal alfa: hay que decirlo, no
+    // aplanar el fondo a negro en silencio.
+    await expect(page.getByText(/MP4 no puede guardar transparencia/)).toBeVisible();
+    await page.getByRole('button', { name: 'WebM (VP8)', exact: true }).click();
+    await expect(page.getByText(/MP4 no puede guardar transparencia/)).toBeHidden();
+
+    const download = page.waitForEvent('download', { timeout: 300_000 });
+    await page.getByRole('button', { name: 'Exportar vídeo', exact: true }).click();
+    const file = await download;
+
+    const { readFile } = await import('node:fs/promises');
+    const base64 = (await readFile(await file.path())).toString('base64');
+
+    // Se comprueba en el navegador, que es el consumidor real: ffmpeg pierde el
+    // alfa al volver a descodificar este WebM, el navegador no (PLAN §3.7).
+    const corner = await page.evaluate(async (data) => {
+      const video = document.createElement('video');
+      video.muted = true;
+      video.src = `data:video/webm;base64,${data}`;
+      await new Promise<void>((resolve, reject) => {
+        video.onloadeddata = () => resolve();
+        video.onerror = () => reject(new Error('undecodable'));
+      });
+      video.currentTime = 0.3;
+      await new Promise<void>((resolve) => {
+        video.onseeked = () => resolve();
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true })!;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(video, 0, 0);
+      // Una esquina, donde el visual no dibuja nunca.
+      return context.getImageData(4, 4, 1, 1).data[3];
+    }, base64);
+
+    expect(corner).toBe(0);
+  });
 });

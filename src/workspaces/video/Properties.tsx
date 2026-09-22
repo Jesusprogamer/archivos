@@ -157,6 +157,24 @@ export function Properties({ editor }: { editor: VideoEditor }) {
         <Notice tone="info">{t('video.keyframeHint')}</Notice>
       </section>
 
+      <section className={styles.group}>
+        <h3 className={panel.sectionTitle}>{t('video.effects')}</h3>
+        <Field label={t('video.beatPunch')}>
+          {(id) => (
+            <Slider
+              id={id}
+              min={0}
+              max={1}
+              step={0.05}
+              value={clip.beatPunch}
+              aria-label={t('video.beatPunch')}
+              onChange={(beatPunch) => update({ beatPunch })}
+            />
+          )}
+        </Field>
+        <Notice tone="info">{t('video.beatPunchHelp')}</Notice>
+      </section>
+
       {isTextClip(clip) ? <TextProperties clip={clip} editor={editor} /> : null}
       {!isTextClip(clip) ? <MediaProperties clip={clip} editor={editor} /> : null}
 

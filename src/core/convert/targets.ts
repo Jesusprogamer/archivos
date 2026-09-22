@@ -1,3 +1,4 @@
+import { x264ThreadArgs } from '../ffmpeg/threads';
 import { FORMATS, type Format, type MediaKind } from '../detect/formats';
 import type { ConversionOptions, QualityLevel } from './options';
 
@@ -110,6 +111,9 @@ function videoArgs(
       '-preset', PRESET[video.quality],
       '-crf', String(CRF[codec][video.quality]),
       '-pix_fmt', 'yuv420p',
+      // Solo x264: sin `-threads` explícito se cae contra el núcleo multihilo.
+      // A x265 le sienta peor forzarlo, y no lo necesita (PLAN §3.8).
+      ...(codec === 'x264' ? x264ThreadArgs() : []),
     );
     if (codec === 'x265') args.push('-tag:v', 'hvc1');
   }

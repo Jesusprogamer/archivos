@@ -22,7 +22,12 @@ export default defineConfig({
     // assertions read like the UI. One test overrides this to check English.
     locale: 'es-ES',
     trace: 'retain-on-failure',
-    ...(executablePath ? { launchOptions: { executablePath } } : {}),
+    // `--no-sandbox` porque estas imágenes corren como root, donde Chromium se
+    // niega a arrancar con su zigoto habitual. Solo se aplica cuando el binario
+    // lo pone el entorno, nunca al Chromium que Playwright se descarga.
+    ...(executablePath
+      ? { launchOptions: { executablePath, args: ['--no-sandbox'] } }
+      : {}),
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
