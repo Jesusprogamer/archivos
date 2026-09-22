@@ -205,6 +205,34 @@
 
 .previewBar > span {
   flex: 1;
+  /* Sin esto el texto se partía palabra a palabra en una columna estrecha y
+     el aviso ocupaba cuatro líneas de altura. */
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  /*
+   * En móvil el aviso de vista previa competía por el ancho con deshacer,
+   * rehacer y el zoom, y acababa siendo una columna de dos palabras por línea
+   * con el botón «Aplicar» encajado debajo. Pasa a ocupar su propia fila.
+   */
+  .stageToolbar {
+    flex-wrap: wrap;
+  }
+
+  .stageSpacer {
+    display: none;
+  }
+
+  .previewBar {
+    order: 1;
+    flex-basis: 100%;
+  }
+
+  /* El zoom se queda a la derecha de deshacer/rehacer, no debajo. */
+  .zoomValue {
+    margin-inline-start: auto;
+  }
 }
 
 .swatchRow {

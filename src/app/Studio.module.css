@@ -97,6 +97,12 @@
   display: grid;
   grid-template-columns: auto 1fr;
   min-height: 0;
+  /*
+   * El cajón de la biblioteca se posiciona contra este contenedor. Sin esto
+   * resolvía contra el viewport y en móvil se subía por encima de la barra
+   * superior, tapando las pestañas y los ajustes.
+   */
+  position: relative;
 }
 
 .main {
@@ -136,8 +142,52 @@
   font-weight: 600;
 }
 
+/* Un velo detrás del cajón: deja claro que es temporal y se cierra al tocarlo. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: calc(var(--z-panel) - 1);
+  border: 0;
+  padding: 0;
+  background: color-mix(in srgb, var(--bg-canvas) 60%, transparent);
+}
+
 @media (max-width: 860px) {
   .body {
     grid-template-columns: 1fr;
+  }
+
+  /*
+   * En móvil la barra superior tenía que encajar marca, cajón, pestañas,
+   * nombre del archivo y cuatro botones en 390 px: las pestañas acababan
+   * cortadas a la mitad de una palabra. El nombre del archivo es lo único
+   * prescindible —está en la biblioteca, a un toque— así que se retira y las
+   * pestañas recuperan el sitio.
+   */
+  .fileName {
+    display: none;
+  }
+
+  .topbar {
+    gap: var(--s-2);
+    padding-inline: var(--s-2);
+  }
+
+  .tabs {
+    /* Que se pueda arrastrar en vez de cortarse, y sin tirones. */
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab {
+    scroll-snap-align: start;
+    flex: none;
+  }
+}
+
+/* El velo solo tiene sentido cuando la biblioteca flota sobre el trabajo. */
+@media (min-width: 861px) {
+  .scrim {
+    display: none;
   }
 }

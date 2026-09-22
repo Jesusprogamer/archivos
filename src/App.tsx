@@ -9,6 +9,7 @@ import { Home } from './app/Home';
 import { Settings } from './app/Settings';
 import { Studio } from './app/Studio';
 import { useFileDrop } from './app/useFileDrop';
+import { useNarrow } from './app/useNarrow';
 import { InstallButton } from './pwa/InstallButton';
 import { applyUpdate, usePwa } from './pwa/install';
 import { startLaunchQueue } from './pwa/launch';
@@ -23,7 +24,18 @@ export function App() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [libraryCollapsed, setLibraryCollapsed] = useState(false);
+  const narrow = useNarrow();
+  // En móvil la biblioteca tapa el editor, así que empieza cerrada. En
+  // escritorio es una columna más y empieza abierta.
+  const [libraryCollapsed, setLibraryCollapsed] = useState(narrow);
+
+  // Al elegir un archivo en una pantalla estrecha, el cajón estorba: lo que
+  // quieres ver es lo que acabas de abrir.
+  const [lastItemId, setLastItemId] = useState(item?.id);
+  if (item?.id !== lastItemId) {
+    setLastItemId(item?.id);
+    if (narrow && item) setLibraryCollapsed(true);
+  }
 
   const onFiles = useCallback((files: File[]) => void addFiles(files), [addFiles]);
   const { dragging } = useFileDrop(onFiles);
